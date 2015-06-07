@@ -24,7 +24,11 @@ protected class DatabaseWrapper{
 
 	public static void stop(){
 		if (conn != null)
-			conn.close();
+			try {
+            	conn.close();
+        	} catch (SQLException e) {
+            	e.printStackTrace();
+        	}
 
 		Log.v("Stop", "Connection Closed?");
 	}
