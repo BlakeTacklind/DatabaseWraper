@@ -1,15 +1,69 @@
-class DatabaseWraper{
-	private static Connection conn;
-	private static int userid;
+
+
+class DatabaseWrapper{
+	protected static Connection conn;
+	protected static int userid;
+    final private static String url = "jdbc:postgresql://serenity.isozilla.com:5432/" +
+            "parcelexchange?sslfactory=org.postgresql.ssl.NonValidatingFactory" +
+            "&ssl=true";
 
 	public static void start(){
+        Connector c = new Connector();
+        c.execute();
 
+        while(!c.done);
+
+        return;
 	}
 
 	public static void stop(){
+		if (conn != null)
+			conn.close();
 
+		log.v("Stop", "Connection Closed?");
 	}
 	
+	private static class Connector extends AsyncTask<Interger, Integer, Integer>{
+		protected Boolean done;
+
+		protected Connector(){
+			done=false;
+		}
+
+		protected int doInBackground(int... in) {
+        	
+        	try {
+            	conn = DriverManager. getConnection(url, "parcelexchange", "Mabc0NDkYRf1yVyIfhRd");
+        	} catch (SQLException e) {
+            	e.printStackTrace();
+        	}
+
+	        if (conn == null)
+    	        Log.e("connectToDataBase", "Connection was null");
+
+       		return 0;
+     	}
+
+     	protected void onPostExecute(int result) {
+        	done = true;
+     	}
+	}
+	/*
+	private class DownloadFilesTask extends AsyncTask<URL, Integer, Long> {
+     	protected Long doInBackground(URL... urls) {
+         
+     	}
+
+     	protected void onProgressUpdate(Integer... progress) {
+        
+     	}
+
+     	protected void onPostExecute(Long result) {
+         
+     	}
+ 	}
+ 	*/
+
 	/*
 	Give your user name
 	prints error if failed
@@ -24,7 +78,7 @@ class DatabaseWraper{
 	return true if success
 	*/
 	public static boolean addUser(String name){
-
+		return true;
 	}
 	
 	/*
@@ -32,7 +86,7 @@ class DatabaseWraper{
 	returns true if successful
 	*/
 	public static boolean deleteSelf(){
-
+		return true;
 	}
 	
 	/*
@@ -42,14 +96,14 @@ class DatabaseWraper{
 	*/
 
 	public static ArrayList<User> getFriends(){
-
+		return null;
 	}
 	
 	/*
 	SELECT * FROM users WHERE userid = ANY(SELECT user1 FROM friendship WHERE user2 = self) OR userid = ANY(SELECT user2 FROM friendship WHERE user1 = self) INTERSECT SELECT * FROM users WHERE userid = ANY(SELECT user1 FROM friendship WHERE user2 = int) OR userid = ANY(SELECT user2 FROM friendship WHERE user1 = int) ORDER BY username;
 	*/
 	public static ArrayList<User> getMutualFriends(int id){
-
+		return null;
 	}
 	
 	public class User{
@@ -61,10 +115,11 @@ class DatabaseWraper{
 	Give a user id (or name, not preferable)
 	*/
 	public static User getUserDetails(String name){
-
+		return null;
 	}
-	public static User getUserDetails(int id){
 
+	public static User getUserDetails(int id){
+		return null;
 	}
 	
 	/*
@@ -72,11 +127,11 @@ class DatabaseWraper{
 	returns connents of knapsack
 	*/
 	public static ArrayList<Item> getKnapsack(int id){
-
+		return null;
 	}
 
 	public static ArrayList<Item> getKnapsack(String name){
-
+		return null;
 	}
 
 	public class Item{
@@ -89,7 +144,7 @@ class DatabaseWraper{
 	returns true if posted
 	*/
 	public static boolean addToKnapsack(String itemName){
-
+		return true;
 	}
 	
 	/*
@@ -97,7 +152,7 @@ class DatabaseWraper{
 	returns true if removed successfully
 	*/
 	public static boolean removeFromKnapsack(int itemNumber){
-
+		return true;
 	}
 	
 	/*
@@ -105,11 +160,11 @@ class DatabaseWraper{
 	returns true if succefully posted
 	*/
 	public static boolean requestFriendship(int id){
-
+		return true;
 	}
 
 	public static boolean requestFriendship(String name){
-	
+		return true;
 	}
 	
 	/*
@@ -117,7 +172,7 @@ class DatabaseWraper{
 	returns true if succesfully posted request
 	*/
 	public static boolean requestTrade(int id, ArrayList<Item> myItems, ArrayList<Item> theirItems){
-
+		return true;
 	}
 	
 	/*
@@ -125,7 +180,7 @@ class DatabaseWraper{
 	returns true if succefully posted response
 	*/
 	public static boolean respond(int requestID, boolean response){
-
+		return true;
 	}
 	
 	/*
@@ -133,14 +188,14 @@ class DatabaseWraper{
 	returns true if succefully posted response
 	*/
 	public static boolean respondLocation(int requestID, String location){
-
+		return true;
 	}
 	
 	/*
 	returns a list of request for the current user
 	*/
 	public static ArrayList<Request> getRequests(){
-
+		return null;
 	}
 	
 	/* TYPES
