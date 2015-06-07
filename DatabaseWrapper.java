@@ -2,48 +2,45 @@
     public static class DatabaseWrapper{
         private static Connection conn;
         private static int userid;
-        final private static String url = "jdbc:postgresql://serenity.isozilla.com:5432/" +
+        final private static String url = "jdbc:postgresql://serenity.isozilla.com:5432/"; /*+
                 "parcelexchange?sslfactory=org.postgresql.ssl.NonValidatingFactory" +
-                "&ssl=true";
+                "&ssl=true";*/
         final private static String username = "parcelexchange";
         final private static String password = "Mabc0NDkYRf1yVyIfhRd";
 
+        public static void setId(int i){userid = i;}
 
-        private static void start(){
+        private static void start() throws SQLException{
             try {
                 Class.forName("org.postgresql.Driver");
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
             }
 
-            Log.v("Test","Test 3");
+            Log.v("Test", "Test 3");
 
-            //Connector c = new Connector();
-            //c.execute();
-            try {
+            Properties props = new Properties();
+            props.setProperty("user", username);
+            props.setProperty("password", password);
+            props.setProperty("sslfactory", "org.postgresql.ssl.NonValidatingFactory");
+            props.setProperty("ssl", "true");
+            props.setProperty("loginTimeout", "5");
+            props.setProperty("socketTimeout", "15");
 
-                if (conn == null || conn.isClosed()){
-                    Log.v("Test", "Connection Non-existant");
-                }
+            Log.v("Test", "Test m");
 
-                conn = DriverManager.getConnection(url, username, password);
+            conn = DriverManager.getConnection(url, props);
 
-
-                if (conn == null || conn.isClosed()){
-                    Log.e("Test", "Connection failed!");
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
+            if (conn == null || conn.isClosed()){
+                Log.e("Test", "Connection failed!");
             }
-
-            Log.v("Test","Test m");
-
 
             Log.v("Test","Test n");
 
         }
 
         private static void stop(){
+            Log.v("Stop","Stopping");
             if (conn != null)
                 try {
                     conn.close();
@@ -76,7 +73,6 @@
         prints error if failed
         */
         public static Boolean LogIn(String name){
-
             if(conn == null){
                 Log.e("Test", "No connection!");
             }
@@ -86,7 +82,7 @@
 
             LoginSequence l = new LoginSequence();
 
-            Log.v("Test","Test 5");
+            Log.v("Test", "Test 5");
             l.execute(name);
 
             Log.v("Test", "Test 4");
@@ -98,7 +94,6 @@
 
             return true;
         }
-
         private static class LoginSequence extends AsyncTask<String, Integer, Integer>{
             public Boolean done;
 
@@ -109,38 +104,42 @@
 
             protected Integer doInBackground(String... name) {
                 userid = 0;
-                start();
                 Log.v("Test","Test 8");
-                if(conn!=null) {
 
-                    String sql;
-                    sql = "SELECT userid FROM users WHERE username = '" + name[0] + "';";
+                String sql;
+                sql = "SELECT userid FROM users WHERE username = '" + name[0] + "';";
 
-                    Log.v("Test",sql);
+                Log.v("Test",sql);
 
-                    Statement st = null;
+                Statement st = null;
+                ResultSet rs = null;
+                try {
+                    start();
+                    st = conn.createStatement();
+                    rs = st.executeQuery(sql);
+
+                    while(rs.next()){
+                        userid = rs.getInt("userid");
+                    }
+
+                    Log.v("Login", "Login as " + userid);
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                finally {
                     try {
-                        st = conn.createStatement();
-                        ResultSet rs = null;
-                        rs = st.executeQuery(sql);
-
-                        while(rs.next()){
-                            userid = rs.getInt("userid");
-                        }
-
-                        Log.v("Login", "Login as " + userid);
-
-                        rs.close();
-                        st.close();
-
+                        if (rs != null)
+                            rs.close();
+                        if (st != null)
+                            st.close();
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
+                    stop();
                 }
 
-
                 done = true;
-                stop();
                 return 0;
             }
 
@@ -165,41 +164,45 @@
 
             return true;
         }
-
-
         private static class AddUserSequence extends AsyncTask<String, Integer, Integer>{
 
             protected Integer doInBackground(String... name) {
-                start();
                 userid = 0;
-                if(conn!=null) {
 
-                    String sql;
-                    sql = "SELECT \"adduser\" ('" + name[0] +"')";
+                String sql;
+                sql = "SELECT \"adduser\" ('" + name[0] +"')";
 
-                    Log.v("Test",sql);
+                Log.v("Test",sql);
 
-                    Statement st = null;
+                Statement st = null;
+                ResultSet rs = null;
+                try {
+                    start();
+                    st = conn.createStatement();
+                    rs = st.executeQuery(sql);
+
+                       while(rs.next()){
+                           userid = rs.getInt("adduser");
+                       }
+
+                       Log.v("AddUser", "UserId: " + userid);
+
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                finally {
                     try {
-                        st = conn.createStatement();
-                        ResultSet rs = null;
-                        rs = st.executeQuery(sql);
-
-                        while(rs.next()){
-                            userid = rs.getInt("adduser");
-                        }
-
-                        Log.v("AddUser", "UserId: " + userid);
-
-                        rs.close();
-                        st.close();
-
+                        if (rs != null)
+                            rs.close();
+                        if (st != null)
+                            st.close();
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
+                    stop();
                 }
 
-                stop();
                 return 0;
             }
 
@@ -210,33 +213,152 @@
 
 
         /*
-        Deletes self
+        Delete user (self)
         returns true if successful
         */
         public static boolean deleteSelf(){
+            if (userid == 0){
+                Log.e("RemoveUser", "Must be logged in to remove user");
+                return false;
+            }
+
+            DeleteSelfSequence d = new DeleteSelfSequence();
+            d.execute();
+
+            while (d.returned == -1);
+
+            if(d.returned == 0)
+                return false;
+
+            userid = 0;
+
             return true;
         }
+        private static class DeleteSelfSequence extends AsyncTask<Integer, Integer, Integer> {
+            protected static int returned;
+            protected Integer doInBackground(Integer... urls) {
+                returned = -1;
 
-	/*
-	return your list of friends
+                String sql;
+                sql = "SELECT \"removeuser\" ('" + userid +"')";
 
-	SELECT * FROM users WHERE userid = ANY(SELECT user1 FROM friendship WHERE user2 = self) OR userid = ANY(SELECT user2 FROM friendship WHERE user1 = self) ORDER BY username;
-	*/
+                Log.v("Test",sql);
 
-        public static ArrayList<User> getFriends(){
-            return null;
+                Statement st = null;
+                ResultSet rs = null;
+                try {
+                    start();
+                    st = conn.createStatement();
+                    rs = st.executeQuery(sql);
+
+                    while(rs.next()){
+                        returned = rs.getInt("removeuser");
+                    }
+
+                    Log.v("removeUser", "UserId: " + returned);
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                finally {
+                    try {
+                        if (rs != null)
+                            rs.close();
+                        if (st != null)
+                            st.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    stop();
+                }
+
+                return 0;
+            }
+
+            protected void onProgressUpdate(Integer... progress) {
+
+            }
+
+            protected void onPostExecute(Integer result) {
+
+            }
         }
+
+    	/*
+	    return your list of friends
+
+    	SELECT * FROM users WHERE userid = ANY(SELECT user1 FROM friendship WHERE user2 = self) OR userid = ANY(SELECT user2 FROM friendship WHERE user1 = self) ORDER BY username;
+	    */
+        public static ArrayList<User> getFriends(){
+            getFriendsSequnece f = new getFriendsSequnece();
+            f.execute();
+
+            while (!f.done());
+
+            return f.output;
+        }
+        private static class getFriendsSequnece extends AsyncTask<Integer, Integer, Integer>{
+            protected ArrayList<User> output;
+
+            private Boolean done;
+            public Boolean done(){return done;}
+
+            public getFriendsSequnece(){
+                super();
+                done = false;
+            }
+
+            @Override
+            protected Integer doInBackground(Integer... params) {
+
+                String sql;
+                sql = "SELECT * FROM users WHERE " +
+                        "userid = ANY(SELECT user1 FROM friendship WHERE user2 = "+userid+") OR " +
+                        "userid = ANY(SELECT user2 FROM friendship WHERE user1 = "+userid+") " +
+                        "ORDER BY username;";
+
+                Log.v("Test",sql);
+
+                Statement st = null;
+                ResultSet rs = null;
+                try {
+                    start();
+                    st = conn.createStatement();
+                    rs = st.executeQuery(sql);
+                    output = new ArrayList<User>();
+
+                    while(rs.next()){
+                        output.add(new User(rs.getInt("userid"), rs.getString("username")));
+                    }
+
+                    done = true;
+                    Log.v("getFriends", "Number of friends " + output.size());
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                finally {
+                    try {
+                        if (rs != null)
+                            rs.close();
+                        if (st != null)
+                            st.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    stop();
+                }
+
+                return null;
+            }
+        }
+
 
         /*
         SELECT * FROM users WHERE userid = ANY(SELECT user1 FROM friendship WHERE user2 = self) OR userid = ANY(SELECT user2 FROM friendship WHERE user1 = self) INTERSECT SELECT * FROM users WHERE userid = ANY(SELECT user1 FROM friendship WHERE user2 = int) OR userid = ANY(SELECT user2 FROM friendship WHERE user1 = int) ORDER BY username;
         */
         public static ArrayList<User> getMutualFriends(int id){
             return null;
-        }
-
-        public class User{
-            int id;
-            String name;
         }
 
         /*    Not needed?
@@ -352,3 +474,15 @@
 
     }
 
+    public static class User{
+        public User(int i, String n){
+            id = i;
+            name = n;
+        }
+
+        public int id(){return id;}
+        public String name(){return name;}
+
+        private int id;
+        private String name;
+    }
