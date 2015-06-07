@@ -7,7 +7,7 @@ public static class DatabaseWrapper{
             "parcelexchange?sslfactory=org.postgresql.ssl.NonValidatingFactory" +
             "&ssl=true";
 
-	public static void start(){
+	private static void start(){
 		try {
             Class.forName("org.postgresql.Driver");
         } catch (ClassNotFoundException e) {
@@ -17,12 +17,10 @@ public static class DatabaseWrapper{
         Connector c = new Connector();
         c.execute();
 
-        LogIn("");
-
         return;
 	}
 
-	public static void stop(){
+	private static void stop(){
 		if (conn != null)
 			try {
             	conn.close();
@@ -78,19 +76,34 @@ public static class DatabaseWrapper{
 	Give your user name
 	prints error if failed
 	*/
-	public static void LogIn(String name){
-		new LoginSequence().execute(name);
+	public static Boolean LogIn(String name){
+		start();
+		LoginSequence l = new LoginSequence();
+		
+		l.execute(name);
+
+		while (!l.done);
+
+		if (userid == 0)
+			return false;
+
+		return true;
 	}
 
 	private static class LoginSequence extends AsyncTask<String, Integer, Integer>{
-        protected Integer doInBackground(String... name) {
-            //Log.v(TAG, "Stage 3");
-            //Log.v(TAG, "Stage 4");
+        public Boolean done;
 
+        public LoginSequence(){
+        	super();
+        	done = false;
+        }
+
+        protected Integer doInBackground(String... name) {
+        	userid = 0;
             if(conn!=null) {
 
                 String sql;
-                sql = "SELECT username FROM users;";
+                sql = "SELECT username FROM users WHERE username = '" + name[0] + "';";
 
                 Statement st = null;
                 try {
@@ -99,8 +112,7 @@ public static class DatabaseWrapper{
                     rs = st.executeQuery(sql);
 
                     while(rs.next()){
-                        String user = rs.getString("username");
-                        Log.v(TAG, user);
+                        userid = rs.getInteger("userid");
                     }
 
                     rs.close();
@@ -111,13 +123,12 @@ public static class DatabaseWrapper{
                 }
             }
 
-            //Log.v(TAG, "Stage 5");
-
             return 0;
         }
 
         protected void onPostExecute(Integer result){
-            //Log.v("GetData", "Done Stuff");
+            stop();
+            done = true;
         }
     }
 	
