@@ -1,6 +1,6 @@
 
 
-protected class DatabaseWrapper{
+public static class DatabaseWrapper{
 	protected static Connection conn;
 	protected static int userid;
     final private static String url = "jdbc:postgresql://serenity.isozilla.com:5432/" +
@@ -17,7 +17,7 @@ protected class DatabaseWrapper{
         Connector c = new Connector();
         c.execute();
 
-        while(!c.done);
+        LogIn("");
 
         return;
 	}
@@ -33,7 +33,7 @@ protected class DatabaseWrapper{
 		Log.v("Stop", "Connection Closed?");
 	}
 	
-	private static class Connector extends AsyncTask<Interger, Integer, Integer>{
+	private static class Connector extends AsyncTask<Integer, Integer, Integer>{
 		protected Boolean done;
 
 		protected Connector(){
@@ -79,8 +79,48 @@ protected class DatabaseWrapper{
 	prints error if failed
 	*/
 	public static void LogIn(String name){
-
+		new LoginSequence().execute(name);
 	}
+
+	private static class LoginSequence extends AsyncTask<String, Integer, Integer>{
+        protected Integer doInBackground(String... name) {
+            //Log.v(TAG, "Stage 3");
+            //Log.v(TAG, "Stage 4");
+
+            if(conn!=null) {
+
+                String sql;
+                sql = "SELECT username FROM users;";
+
+                Statement st = null;
+                try {
+                    st = conn.createStatement();
+                    ResultSet rs = null;
+                    rs = st.executeQuery(sql);
+
+                    while(rs.next()){
+                        String user = rs.getString("username");
+                        Log.v(TAG, user);
+                    }
+
+                    rs.close();
+                    st.close();
+
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            //Log.v(TAG, "Stage 5");
+
+            return 0;
+        }
+
+        protected void onPostExecute(Integer result){
+            //Log.v("GetData", "Done Stuff");
+        }
+    }
+	
 	//Logged in user id is stored global variable
 	
 	/*
