@@ -1,6 +1,6 @@
 
 
-class DatabaseWrapper{
+protected class DatabaseWrapper{
 	protected static Connection conn;
 	protected static int userid;
     final private static String url = "jdbc:postgresql://serenity.isozilla.com:5432/" +
@@ -8,6 +8,12 @@ class DatabaseWrapper{
             "&ssl=true";
 
 	public static void start(){
+		try {
+            Class.forName("org.postgresql.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+
         Connector c = new Connector();
         c.execute();
 
@@ -20,7 +26,7 @@ class DatabaseWrapper{
 		if (conn != null)
 			conn.close();
 
-		log.v("Stop", "Connection Closed?");
+		Log.v("Stop", "Connection Closed?");
 	}
 	
 	private static class Connector extends AsyncTask<Interger, Integer, Integer>{
@@ -30,10 +36,10 @@ class DatabaseWrapper{
 			done=false;
 		}
 
-		protected int doInBackground(int... in) {
+		protected Integer doInBackground(Integer... in) {
         	
         	try {
-            	conn = DriverManager. getConnection(url, "parcelexchange", "Mabc0NDkYRf1yVyIfhRd");
+            	conn = DriverManager.getConnection(url, "parcelexchange", "Mabc0NDkYRf1yVyIfhRd");
         	} catch (SQLException e) {
             	e.printStackTrace();
         	}
@@ -44,7 +50,7 @@ class DatabaseWrapper{
        		return 0;
      	}
 
-     	protected void onPostExecute(int result) {
+     	protected void onPostExecute(Integer result) {
         	done = true;
      	}
 	}
@@ -217,8 +223,8 @@ class DatabaseWrapper{
 		User from;
 		User to;
 		//sometimes useful
-		ArrayList<int> extra1;
-		ArrayList<int> extra2;
+		ArrayList<Integer> extra1;
+		ArrayList<Integer> extra2;
 		String extrastring;
 	}
 
