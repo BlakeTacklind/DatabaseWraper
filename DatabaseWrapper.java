@@ -1,5 +1,4 @@
 
-
     public static class DatabaseWrapper{
         private static Connection conn;
         private static int userID;
@@ -503,7 +502,7 @@
                     case 1:
                     case 2:
                     case 3:
-                        output.add(new Request(rs.getInt("id"), type, rs.getInt("from"), rs.getInt("to"), null, null, null));
+                        output.add(new Request(rs.getInt("id"), type, rs.getInt("from"), rs.getInt("to"), 0, null, null, null));
                         return;
                     default:
                         Log.e("getRequestsTo", "Request Type not implemented!");
@@ -690,22 +689,53 @@
 
 
         /*
-        Pass: id, my item(s) to trade, thier item(s) to trade
-        returns true if succesfully posted request
+        Pass: id, my item(s) to trade, their item(s) to trade
+        (temporarily removes items to be traded from senders knapsack?)
+        returns true if successfully posted request
         */
-        public static boolean requestTrade(int id, ArrayList<Item> myItems, ArrayList<Item> theirItems){
+        public static boolean requestTrade(int id, ArrayList<Item> myItems, ArrayList<Item> theirItems) throws TimeoutException, NotLoggedInException {
+            return false;
+        }
+
+        /*
+        Decline the trade defined b requestID
+        returns true if successful
+         */
+        public static boolean declineTrade(int requestID) throws TimeoutException, NotLoggedInException {
             return false;
         }
 
         /*
         int: request number, string: location name
-        returns true if succefully posted response
+        returns true if successfully posted response
         */
-        public static boolean respondLocation(int requestID, String location){
+        public static boolean respondLocation(int requestID, String location) throws TimeoutException, NotLoggedInException {
             return false;
         }
 
+        /*
+        Accept the location of trade defined by requestID
+        returns true if successful
+         */
+        public static boolean acceptLocation(int requestID) throws TimeoutException, NotLoggedInException{
+            return false;
+        }
 
+        /*
+        request a middle man by ID
+        returns true if successful
+         */
+        public static boolean requestMiddleMan(int requestID, int middleManID) throws TimeoutException, NotLoggedInException{
+            return false;
+        }
+
+        /*
+        Middle man responds to a request
+        Returns true is successfully posted
+         */
+        public static boolean middlemanResponse(int requestID, Boolean answer) throws TimeoutException, NotLoggedInException{
+            return false;
+        }
     }
 
     public static class User{
@@ -751,11 +781,11 @@
     MiddleMan Rejected = 22
     */
     public static class Request{
-        private int requestID, type, fromID, toID;
+        private int requestID, type, fromID, toID, extraInt;
         private int[] extra1, extra2;
         private String extrastring;
 
-        public Request(int id, int ty, int frm, int to, int[] e1, int[] e2, String es){
+        public Request(int id, int ty, int frm, int to, int ei,int[] e1, int[] e2, String es){
             requestID = id;
             type = ty;
             fromID = frm;
@@ -763,11 +793,12 @@
             extra1 = e1;
             extra2 = e2;
             extrastring = es;
+            extraInt = ei;
         }
 
         public String toString(){
             return "requestID: " + requestID + ", type: " + type + ", fromID: " + fromID +
-                    ", toID: " + toID + ", extra1: " + extra1 + ", extra2: " + extra2 +
+                    ", toID: " + toID + " , extraInt: " + extraInt + ", extra1: " + extra1 + ", extra2: " + extra2 +
                     ", extrastring: \"" + extrastring + "\".";
         }
     }
