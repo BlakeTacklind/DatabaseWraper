@@ -355,7 +355,7 @@
                 return output;
             }
         }
-        
+
         /*
         add item named string to knapsack
         returns true if posted
@@ -647,6 +647,47 @@
                 return output;
             }
         }
+
+        /*
+        Removes friendship relation
+        (should also remove current requests between users?)
+        returns true is successful
+         */
+        public static boolean removeFriendship(int friendID) throws TimeoutException, NotLoggedInException {
+            if (userID == 0) throw new NotLoggedInException();
+
+            removeFriendshipTask rf = new removeFriendshipTask(friendID);
+
+            try {
+                if (rf.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
+                    return true;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            return false;
+        }
+        private static class removeFriendshipTask extends SELECT<Integer>{
+            private int output;
+
+            public removeFriendshipTask(int frID) {
+                super("SELECT \"removeFriend\" ("+userID+", "+frID+");");
+                output = 0;
+            }
+
+            @Override
+            protected void middle(ResultSet rs) throws SQLException {
+                output = rs.getInt("removeFriend");
+            }
+
+            @Override
+            protected Integer endBackground() {
+                return output;
+            }
+        }
+
 
         /*
         Pass: id, my item(s) to trade, thier item(s) to trade
