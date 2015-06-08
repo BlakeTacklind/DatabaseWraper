@@ -1,4 +1,5 @@
 
+
     public static class DatabaseWrapper{
         private static Connection conn;
         private static int userID;
@@ -25,23 +26,17 @@
             //props.setProperty("loginTimeout", "5");
             //props.setProperty("socketTimeout", "15");
 
-            Log.v("Test", "Test m");
-
             conn = DriverManager.getConnection(url, username, password);
 
             if (conn == null || conn.isClosed()){
                 Log.e("Test", "Connection failed!");
             }
 
-            Log.v("Test","Test n");
-
         }
         private static void stop(){
-            Log.v("Stop","Stopping");
             if (conn != null)
                 try {
                     conn.close();
-                    Log.v("Stop", "Connection Closed");
                 } catch (SQLException e) {
                     e.printStackTrace();
                 }
@@ -52,16 +47,9 @@
         prints error if failed
         */
         public static Boolean logIn(String name) throws TimeoutException {
-            if(conn == null){
-                Log.e("Test", "No connection!");
-            }
-            else{
-                Log.v("Test", "Connection!");
-            }
 
             logInTask l = new logInTask(name);
 
-            Log.v("Test", "Test 5");
             try {
                 l.execute().get(timeOut, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
@@ -70,7 +58,6 @@
                 e.printStackTrace();
             }
 
-            Log.v("Test","Test 6 " + userID);
             if (userID == 0)
                 return false;
 
@@ -244,8 +231,8 @@
             }
 
             protected abstract void middle(ResultSet rs) throws SQLException;
-            protected abstract void postRead();
             protected abstract OutputType endBackground();
+            protected void postRead(){}
 
             protected OutputType doInBackground(Integer... in){
                 ArrayList<User> output = new ArrayList<User>();
@@ -328,18 +315,6 @@
             }
         }
 
-        /*    Not needed?
-        Give a user id (or name, not preferable)
-        */
-        /*
-        public static User getUserDetails(String name){
-            return null;
-        }
-
-        public static User getUserDetails(int id){
-            return null;
-        }
-        */
         /*
         Give a user id (or name, not preferable)
         returns connents of knapsack
@@ -380,12 +355,7 @@
                 return output;
             }
         }
-
-        /*
-        public static ArrayList<Item> getKnapsack(String name){
-            return null;
-        }
-        */
+        
         /*
         add item named string to knapsack
         returns true if posted
@@ -424,37 +394,6 @@
             @Override
             protected Integer endBackground() {
                 return itemNum;
-            }
-        }
-
-        private static class addToKnapsackSequence extends AsyncTask<String,Integer,Integer>{
-            private String sql;
-            @Override
-            protected Integer doInBackground(String... params) {
-                sql = "INSERT INTO items (name, heldby) VALUES (?,?);";
-
-                PreparedStatement st = null;
-                try {
-                    start();
-                    st = conn.prepareStatement(sql);
-                    st.setString(1, params[0]);
-                    st.setInt(2,userID);
-                    st.executeUpdate();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                finally {
-                    if (st != null)
-                        try {
-                            st.close();
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
-
-                    stop();
-                }
-
-                return 0;
             }
         }
 
@@ -533,16 +472,180 @@
             }
         }
 
+        public static ArrayList<Request> getRequestsTo() throws TimeoutException, NotLoggedInException {
+            if (userID == 0)throw new NotLoggedInException();
+
+            getRequestToTask rq = new getRequestToTask();
+
+            try {
+                return rq.execute().get(timeOut, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            return new ArrayList<Request>();
+        }
+        private static class getRequestToTask extends SELECT<ArrayList<Request>>{
+            private ArrayList<Request> output;
+
+            public getRequestToTask() {
+                super("SELECT * FROM requests WHERE \"to\" = "+userID+";");
+                output = new ArrayList<Request>();
+            }
+
+            @Override
+            protected void middle(ResultSet rs) throws SQLException {
+                int type = rs.getInt("type");
+
+                switch (type){
+                    case 1:
+                    case 2:
+                    case 3:
+                        output.add(new Request(rs.getInt("id"), type, rs.getInt("from"), rs.getInt("to"), null, null, null));
+                        return;
+                    default:
+                        Log.e("getRequestsTo", "Request Type not implemented!");
+                }
+
+            }
+
+            @Override
+            protected void postRead() {
+
+            }
+
+            @Override
+            protected ArrayList<Request> endBackground() {
+                return output;
+            }
+        }
+
         /*
         Pass user id to befriend
         returns true if succefully posted
         */
-        public static boolean requestFriendship(int id){
-            return true;
+        public static boolean requestFriendship(String name) throws TimeoutException, NotLoggedInException {
+            if (userID == 0)throw new NotLoggedInException();
+
+            addFriendTask af = new addFriendTask(name);
+
+            try {
+                if (af.execute().get(timeOutLong, TimeUnit.MILLISECONDS) > 0)
+                    return true;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            return false;
+        }
+        private static class addFriendTask extends SELECT<Integer>{
+            private int out;
+
+            public addFriendTask(String name) {
+                super("SELECT \"addfriend\" ("+userID+", '"+name+"');");
+                out = 0;
+            }
+
+            @Override
+            protected void middle(ResultSet rs) throws SQLException {
+                out = rs.getInt("addfriend");
+            }
+
+            @Override
+            protected void postRead() {
+
+            }
+
+            @Override
+            protected Integer endBackground() {
+                return out;
+            }
         }
 
-        public static boolean requestFriendship(String name){
-            return true;
+        /*
+        Pass in yes or no to response, and request number
+        Works with request type
+        returns true if successfully posted response
+        */
+        public static boolean respondFriendship(int requestID, boolean response) throws TimeoutException, NotLoggedInException {
+            if (userID == 0) throw new NotLoggedInException();
+
+            String s;
+            if (response) s = "true";
+            else s = "false";
+
+            respondFriendshipTask fr = new respondFriendshipTask(requestID, s);
+
+            try {
+                if (fr.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
+                    return true;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            return false;
+        }
+        private static class respondFriendshipTask extends SELECT<Integer>{
+            private int output;
+
+            public respondFriendshipTask(int id, String b) {
+                super("SELECT \"respondFriendRequest\" ("+userID+", "+id+", "+b+");");
+                output = 0;
+            }
+
+            @Override
+            protected void middle(ResultSet rs) throws SQLException {
+                output = rs.getInt("respondFriendRequest");
+            }
+
+            @Override
+            protected Integer endBackground() {
+                return output;
+            }
+        }
+
+        /*
+        Respond to a generic notification
+         */
+        public static boolean clearRequest(int requestID) throws TimeoutException, NotLoggedInException {
+            if (userID == 0) throw new NotLoggedInException();
+
+            clearRequestTask cr = new clearRequestTask(requestID);
+
+            try {
+                if (cr.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
+                    return true;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            return false;
+        }
+        private static class clearRequestTask extends SELECT<Integer>{
+            private int output;
+
+            public clearRequestTask(int reqID) {
+                super("SELECT \"clearNotification\" ("+userID+", "+reqID+");");
+                output = 0;
+            }
+
+            @Override
+            protected void middle(ResultSet rs) throws SQLException {
+                output = rs.getInt("clearNotification");
+            }
+
+            @Override
+            protected Integer endBackground() {
+                return output;
+            }
         }
 
         /*
@@ -550,15 +653,7 @@
         returns true if succesfully posted request
         */
         public static boolean requestTrade(int id, ArrayList<Item> myItems, ArrayList<Item> theirItems){
-            return true;
-        }
-
-        /*
-        Pass in yes or no to response, and request number
-        returns true if succefully posted response
-        */
-        public static boolean respond(int requestID, boolean response){
-            return true;
+            return false;
         }
 
         /*
@@ -566,14 +661,7 @@
         returns true if succefully posted response
         */
         public static boolean respondLocation(int requestID, String location){
-            return true;
-        }
-
-        /*
-        returns a list of request for the current user
-        */
-        public static ArrayList<Request> getRequests(){
-            return null;
+            return false;
         }
 
 
@@ -606,28 +694,43 @@
     }
 
     /* TYPES
-    friendship = 1
-    friendshipAccepted = 2
-    friendshipRejected = 3
+    friendship requested = 1
+    friendship Accepted = 2
+    friendship Rejected = 3
 
-    TradeRequested = 10
-    TradeAccepted-withLocation = 11
-    TradeDenied = 12
-    LocationDenied = 13
-    TradeCompleted = 15
+    Trade Requested = 10
+    Trade Denied = 11
+    Request Location = 12 (assumed accepted)
+    Location Denied - new location = 13
+    Location Accepted = 14
+    Trade Completed = 15
 
-    MiddleManRequested = 20
+    MiddleMan Requested = 20
+    MiddleMan Accepted = 21
+    MiddleMan Rejected = 22
     */
-    public class Request{
-        int requestID;
-        int type;
-        int fromID;
-        int toID;
-        //sometimes useful
-        ArrayList<Integer> extra1;
-        ArrayList<Integer> extra2;
-        String extrastring;
+    public static class Request{
+        private int requestID, type, fromID, toID;
+        private int[] extra1, extra2;
+        private String extrastring;
+
+        public Request(int id, int ty, int frm, int to, int[] e1, int[] e2, String es){
+            requestID = id;
+            type = ty;
+            fromID = frm;
+            toID = to;
+            extra1 = e1;
+            extra2 = e2;
+            extrastring = es;
+        }
+
+        public String toString(){
+            return "requestID: " + requestID + ", type: " + type + ", fromID: " + fromID +
+                    ", toID: " + toID + ", extra1: " + extra1 + ", extra2: " + extra2 +
+                    ", extrastring: \"" + extrastring + "\".";
+        }
     }
+
     public static class NotLoggedInException extends Exception{
         public NotLoggedInException(){
             super("User isn't logged in");
