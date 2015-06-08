@@ -1,5 +1,20 @@
+package com.dank.exchange.backend;
 
-    public static class DatabaseWrapper{
+import android.os.AsyncTask;
+import android.util.Log;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+
+public class DatabaseWrapper{
         private static Connection conn;
         private static int userID;
         private static int timeOut = 1000;
@@ -10,7 +25,7 @@
         final private static String username = "parcelexchange";
         final private static String password = "Mabc0NDkYRf1yVyIfhRd";
 
-        private static void start() throws SQLException{
+        private static void start() throws SQLException {
             try {
                 Class.forName("org.postgresql.Driver");
             } catch (ClassNotFoundException e) {
@@ -221,7 +236,7 @@
             }
         }
 
-        private static abstract class SELECT<OutputType> extends AsyncTask<Integer, Integer, OutputType>{
+        private static abstract class SELECT<OutputType> extends AsyncTask<Integer, Integer, OutputType> {
             private String sql;
 
             public SELECT(String SQLquerry){
@@ -736,75 +751,5 @@
         public static boolean middlemanResponse(int requestID, Boolean answer) throws TimeoutException, NotLoggedInException{
             return false;
         }
-    }
 
-    public static class User{
-        public User(int i, String n){
-            id = i;
-            name = n;
-        }
-
-        public int id(){return id;}
-        public String name(){return name;}
-
-        private int id;
-        private String name;
-    }
-
-    public static class Item{
-        public Item(int i, String n){
-            id = i;
-            name = n;
-        }
-
-        public int id(){return id;}
-        public String name(){return name;}
-
-        private int id;
-        private String name;
-    }
-
-    /* TYPES
-    friendship requested = 1
-    friendship Accepted = 2
-    friendship Rejected = 3
-
-    Trade Requested = 10
-    Trade Denied = 11
-    Request Location = 12 (assumed accepted)
-    Location Denied - new location = 13
-    Location Accepted = 14
-    Trade Completed = 15
-
-    MiddleMan Requested = 20
-    MiddleMan Accepted = 21
-    MiddleMan Rejected = 22
-    */
-    public static class Request{
-        private int requestID, type, fromID, toID, extraInt;
-        private int[] extra1, extra2;
-        private String extrastring;
-
-        public Request(int id, int ty, int frm, int to, int ei,int[] e1, int[] e2, String es){
-            requestID = id;
-            type = ty;
-            fromID = frm;
-            toID = to;
-            extra1 = e1;
-            extra2 = e2;
-            extrastring = es;
-            extraInt = ei;
-        }
-
-        public String toString(){
-            return "requestID: " + requestID + ", type: " + type + ", fromID: " + fromID +
-                    ", toID: " + toID + " , extraInt: " + extraInt + ", extra1: " + extra1 + ", extra2: " + extra2 +
-                    ", extrastring: \"" + extrastring + "\".";
-        }
-    }
-
-    public static class NotLoggedInException extends Exception{
-        public NotLoggedInException(){
-            super("User isn't logged in");
-        }
-    }
+}
