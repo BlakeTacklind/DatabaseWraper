@@ -1,4 +1,5 @@
 
+
     public static class DatabaseWrapper{
         private static Connection conn;
         private static int userID;
@@ -76,59 +77,6 @@
 
             return true;
         }
-        private static class LoginSequence extends AsyncTask<String, Integer, Integer>{
-            public Boolean done;
-
-            private LoginSequence(){
-                super();
-                done = false;
-            }
-
-            protected Integer doInBackground(String... name) {
-                userID = 0;
-                Log.v("Test","Test 8");
-
-                String sql;
-                sql = "SELECT userid FROM users WHERE username = '" + name[0] + "';";
-
-                Log.v("Test",sql);
-
-                Statement st = null;
-                ResultSet rs = null;
-                try {
-                    start();
-                    st = conn.createStatement();
-                    rs = st.executeQuery(sql);
-
-                    while(rs.next()){
-                        userID = rs.getInt("userid");
-                    }
-
-                    Log.v("Login", "Login as " + userID);
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                finally {
-                    try {
-                        if (rs != null)
-                            rs.close();
-                        if (st != null)
-                            st.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                    stop();
-                }
-
-                done = true;
-                return 0;
-            }
-
-            protected void onPostExecute(Integer result){
-                Log.v("Login", "Post Execute");
-            }
-        }
         private static class logInTask extends SELECT<String, Integer>{
 
             public logInTask(String name) {
@@ -173,52 +121,6 @@
 
             return true;
         }
-        private static class AddUserSequence extends AsyncTask<String, Integer, Integer>{
-
-            protected Integer doInBackground(String... name) {
-                userID = 0;
-
-                String sql;
-                sql = "SELECT \"adduser\" ('" + name[0] +"')";
-
-                Log.v("Test",sql);
-
-                Statement st = null;
-                ResultSet rs = null;
-                try {
-                    start();
-                    st = conn.createStatement();
-                    rs = st.executeQuery(sql);
-
-                       while(rs.next()){
-                           userID = rs.getInt("adduser");
-                       }
-
-                       Log.v("AddUser", "UserId: " + userID);
-
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                finally {
-                    try {
-                        if (rs != null)
-                            rs.close();
-                        if (st != null)
-                            st.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                    stop();
-                }
-
-                return 0;
-            }
-
-            protected void onPostExecute(Integer result){
-                Log.v("AddUser", "Post Execute");
-            }
-        }
         private static class addUserTask extends SELECT<String, Integer>{
 
             public addUserTask(String name) {
@@ -245,10 +147,9 @@
         Delete user (self)
         returns true if successful
         */
-        public static boolean deleteSelf() throws TimeoutException {
+        public static boolean deleteSelf() throws TimeoutException, NotLoggedInException {
             if (userID == 0){
-                Log.e("RemoveUser", "Must be logged in to remove user");
-                return false;
+                throw new NotLoggedInException();
             }
 
             deleteSelfTask d = new deleteSelfTask();
@@ -266,55 +167,6 @@
             userID = 0;
 
             return true;
-        }
-        private static class DeleteSelfSequence extends AsyncTask<Integer, Integer, Integer> {
-            protected static int returned;
-            protected Integer doInBackground(Integer... urls) {
-                returned = -1;
-
-                String sql;
-                sql = "SELECT \"removeuser\" ('" + userID +"')";
-
-                Log.v("Test",sql);
-
-                Statement st = null;
-                ResultSet rs = null;
-                try {
-                    start();
-                    st = conn.createStatement();
-                    rs = st.executeQuery(sql);
-
-                    while(rs.next()){
-                        returned = rs.getInt("removeuser");
-                    }
-
-                    Log.v("removeUser", "UserId: " + returned);
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                finally {
-                    try {
-                        if (rs != null)
-                            rs.close();
-                        if (st != null)
-                            st.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                    stop();
-                }
-
-                return 0;
-            }
-
-            protected void onProgressUpdate(Integer... progress) {
-
-            }
-
-            protected void onPostExecute(Integer result) {
-
-            }
         }
         private static class deleteSelfTask extends SELECT<Integer, Integer>{
             private int returned;
@@ -342,7 +194,10 @@
     	/*
 	    return your list of friends
         */
-        public static ArrayList<User> getFriends() throws TimeoutException {
+        public static ArrayList<User> getFriends() throws TimeoutException, NotLoggedInException {
+            if (userID == 0)
+                throw new NotLoggedInException();
+
             getFriendsTask f = new getFriendsTask();
             try {
                 return f.execute().get(timeOutLong, TimeUnit.MILLISECONDS);
@@ -353,60 +208,6 @@
             }
 
             return null;
-        }
-        private static class getFriendsSequnece extends AsyncTask<Integer, Integer, ArrayList<User> >{
-            //protected ArrayList<User> output;
-
-            private Boolean done;
-            public Boolean done(){return done;}
-
-            public getFriendsSequnece(){
-                super();
-                done = false;
-            }
-
-            @Override
-            protected ArrayList<User>  doInBackground(Integer... params) {
-                ArrayList<User> output = new ArrayList<User>();
-                String sql;
-                sql = "SELECT * FROM users WHERE " +
-                        "userid = ANY(SELECT user1 FROM friendship WHERE user2 = "+userID+") OR " +
-                        "userid = ANY(SELECT user2 FROM friendship WHERE user1 = "+userID+") " +
-                        "ORDER BY username;";
-
-                Log.v("Test",sql);
-
-                Statement st = null;
-                ResultSet rs = null;
-                try {
-                    start();
-                    st = conn.createStatement();
-                    rs = st.executeQuery(sql);
-
-                    while(rs.next()){
-                        output.add(new User(rs.getInt("userid"), rs.getString("username")));
-                    }
-
-                    done = true;
-                    Log.v("getFriends", "Number of friends " + output.size());
-
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                finally {
-                    try {
-                        if (rs != null)
-                            rs.close();
-                        if (st != null)
-                            st.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                    stop();
-                }
-
-                return output;
-            }
         }
         private static class getFriendsTask extends SELECT<Integer, ArrayList<User>>{
             ArrayList<User> output;
@@ -484,7 +285,9 @@
         /*
 
         */
-        public static ArrayList<User> getMutualFriends(int id) throws TimeoutException {
+        public static ArrayList<User> getMutualFriends(int id) throws TimeoutException, NotLoggedInException {
+            if (userID == 0) throw new NotLoggedInException();
+
             getMutualTask mf = new getMutualTask(id);
 
             try {
@@ -529,6 +332,7 @@
         /*    Not needed?
         Give a user id (or name, not preferable)
         */
+        /*
         public static User getUserDetails(String name){
             return null;
         }
@@ -536,30 +340,63 @@
         public static User getUserDetails(int id){
             return null;
         }
-
+        */
         /*
         Give a user id (or name, not preferable)
         returns connents of knapsack
         */
-        public static ArrayList<Item> getKnapsack(int id){
+        public static ArrayList<Item> getKnapsack(int id) throws TimeoutException {
+            getKnapsackTask k = new getKnapsackTask(id);
+
+            try {
+                return k.execute().get(timeOutLong,TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
             return null;
         }
+        private static class getKnapsackTask extends SELECT<Integer, ArrayList<Item>>{
+            private ArrayList<Item> output;
 
+            public getKnapsackTask(int id) {
+                super("SELECT * FROM items WHERE heldby = "+id+";");
+                output = new ArrayList<Item>();
+            }
+
+            @Override
+            protected void middle(ResultSet rs) throws SQLException {
+                output.add(new Item(rs.getInt("id"), rs.getString("name")));
+            }
+
+            @Override
+            protected void postRead() {
+
+            }
+
+            @Override
+            protected ArrayList<Item> endBackground() {
+                return output;
+            }
+        }
+
+        /*
         public static ArrayList<Item> getKnapsack(String name){
             return null;
         }
-
-        public class Item{
-            int id;
-            String name;
-        }
-
+        */
         /*
         add item named string to knapsack
         returns true if posted
         */
-        public static boolean addToKnapsack(String itemName){
+        public static boolean addToKnapsack(String itemName) {
             return true;
+        }
+
+        private static abstract class INSERT extends AsyncTask<Integer, Integer, Integer>{
+            private String sql;
         }
 
         /*
@@ -650,4 +487,23 @@
 
         private int id;
         private String name;
+    }
+
+    public static class Item{
+        public Item(int i, String n){
+            id = i;
+            name = n;
+        }
+
+        public int id(){return id;}
+        public String name(){return name;}
+
+        private int id;
+        private String name;
+    }
+
+    public static class NotLoggedInException extends Exception{
+        public NotLoggedInException(){
+            super("User isn't logged in");
+        }
     }
