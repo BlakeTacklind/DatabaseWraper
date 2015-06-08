@@ -1,5 +1,4 @@
 
-
     public static class DatabaseWrapper{
         private static Connection conn;
         private static int userID;
@@ -77,7 +76,7 @@
 
             return true;
         }
-        private static class logInTask extends SELECT<String, Integer>{
+        private static class logInTask extends SELECT<Integer>{
 
             public logInTask(String name) {
                 super("SELECT userid FROM users WHERE username = '" + name + "';");
@@ -121,7 +120,7 @@
 
             return true;
         }
-        private static class addUserTask extends SELECT<String, Integer>{
+        private static class addUserTask extends SELECT<Integer>{
 
             public addUserTask(String name) {
                 super("SELECT \"adduser\" ('" + name +"')");
@@ -168,7 +167,7 @@
 
             return true;
         }
-        private static class deleteSelfTask extends SELECT<Integer, Integer>{
+        private static class deleteSelfTask extends SELECT<Integer>{
             private int returned;
             public deleteSelfTask() {
                 super("SELECT \"removeuser\" ('" + userID +"')");
@@ -209,7 +208,7 @@
 
             return null;
         }
-        private static class getFriendsTask extends SELECT<Integer, ArrayList<User>>{
+        private static class getFriendsTask extends SELECT<ArrayList<User>>{
             ArrayList<User> output;
 
             public getFriendsTask() {
@@ -236,7 +235,7 @@
             }
         }
 
-        private static abstract class SELECT<IntputType,OutputType> extends AsyncTask<IntputType, Integer, OutputType>{
+        private static abstract class SELECT<OutputType> extends AsyncTask<Integer, Integer, OutputType>{
             private String sql;
 
             public SELECT(String SQLquerry){
@@ -248,7 +247,7 @@
             protected abstract void postRead();
             protected abstract OutputType endBackground();
 
-            protected OutputType doInBackground(IntputType... in){
+            protected OutputType doInBackground(Integer... in){
                 ArrayList<User> output = new ArrayList<User>();
 
                 Statement st = null;
@@ -299,7 +298,7 @@
             }
             return null;
         }
-        private static class getMutualTask extends SELECT<Integer, ArrayList<User>>{
+        private static class getMutualTask extends SELECT<ArrayList<User>>{
             private ArrayList<User> out;
             public getMutualTask(int id) {
                 super("SELECT * FROM users WHERE " +
@@ -358,7 +357,7 @@
 
             return null;
         }
-        private static class getKnapsackTask extends SELECT<Integer, ArrayList<Item>>{
+        private static class getKnapsackTask extends SELECT<ArrayList<Item>>{
             private ArrayList<Item> output;
 
             public getKnapsackTask(int id) {
@@ -391,20 +390,147 @@
         add item named string to knapsack
         returns true if posted
         */
-        public static boolean addToKnapsack(String itemName) {
-            return true;
+        public static boolean addToKnapsack(String itemName) throws TimeoutException, NotLoggedInException {
+            if (userID == 0) throw new NotLoggedInException();
+
+            try {
+                if (new addToKnapsackTack(itemName).execute().get(timeOutLong,TimeUnit.MILLISECONDS) > 0)
+                    return true;
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+            return false;
+        }
+        private static class addToKnapsackTack extends SELECT<Integer>{
+            private int itemNum;
+
+            public addToKnapsackTack(String name) {
+                super("SELECT \"additem\" ('" + name + "', " + userID + ");");
+                itemNum = -1;
+            }
+
+            @Override
+            protected void middle(ResultSet rs) throws SQLException {
+                rs.getInt("additem");
+            }
+
+            @Override
+            protected void postRead() {
+
+            }
+
+            @Override
+            protected Integer endBackground() {
+                return itemNum;
+            }
         }
 
-        private static abstract class INSERT extends AsyncTask<Integer, Integer, Integer>{
+        private static class addToKnapsackSequence extends AsyncTask<String,Integer,Integer>{
             private String sql;
+            @Override
+            protected Integer doInBackground(String... params) {
+                sql = "INSERT INTO items (name, heldby) VALUES (?,?);";
+
+                PreparedStatement st = null;
+                try {
+                    start();
+                    st = conn.prepareStatement(sql);
+                    st.setString(1, params[0]);
+                    st.setInt(2,userID);
+                    st.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                finally {
+                    if (st != null)
+                        try {
+                            st.close();
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+
+                    stop();
+                }
+
+                return 0;
+            }
+        }
+
+        private static abstract class ALTER<ReturnType> extends AsyncTask<Integer, Integer, ReturnType>{
+            private String sql;
+
+            protected ALTER(String SQLstatement){
+                sql = SQLstatement;
+            }
+
+            protected abstract void setValues(PreparedStatement st) throws SQLException;
+            protected abstract ReturnType returnThis();
+
+            protected ReturnType doInBackground(Integer... params) {
+                PreparedStatement st = null;
+                try {
+                    start();
+                    st = conn.prepareStatement(sql);
+                    setValues(st);
+                    st.executeUpdate();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                finally {
+                    if (st != null)
+                        try {
+                            st.close();
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+
+                    stop();
+                }
+
+                return returnThis();
+            }
         }
 
         /*
         remove item with id from knapsack
         returns true if removed successfully
         */
-        public static boolean removeFromKnapsack(int itemNumber){
-            return true;
+        public static boolean removeFromKnapsack(int itemNumber) throws TimeoutException, NotLoggedInException {
+            if (userID == 0) throw new NotLoggedInException();
+
+            try {
+                return new removeItemTask(itemNumber).execute().get(timeOut, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+
+            return false;
+        }
+        private static class removeItemTask extends SELECT<Boolean>{
+            private Boolean ret;
+            public removeItemTask(int i) {
+                super("SELECT \"removeitem\" ("+i+", "+userID+");");
+                ret = false;
+            }
+
+            @Override
+            protected void middle(ResultSet rs) throws SQLException {
+                ret = rs.getBoolean("removeitem");
+            }
+
+            @Override
+            protected void postRead() {
+
+            }
+
+            @Override
+            protected Boolean endBackground() {
+                return ret;
+            }
         }
 
         /*
@@ -450,29 +576,6 @@
             return null;
         }
 
-        /* TYPES
-        friendship = 1
-        friendshipAccepted = 2
-        friendshipRejected = 3
-
-        TradeRequested = 10
-        TradeAccepted-withLocation = 11
-        TradeDenied = 12
-        LocationDenied = 13
-        TradeCompleted = 15
-
-        MiddleManRequested = 20
-        */
-        public class Request{
-            int id;
-            int type;
-            User from;
-            User to;
-            //sometimes useful
-            ArrayList<Integer> extra1;
-            ArrayList<Integer> extra2;
-            String extrastring;
-        }
 
     }
 
@@ -502,6 +605,29 @@
         private String name;
     }
 
+    /* TYPES
+    friendship = 1
+    friendshipAccepted = 2
+    friendshipRejected = 3
+
+    TradeRequested = 10
+    TradeAccepted-withLocation = 11
+    TradeDenied = 12
+    LocationDenied = 13
+    TradeCompleted = 15
+
+    MiddleManRequested = 20
+    */
+    public class Request{
+        int requestID;
+        int type;
+        int fromID;
+        int toID;
+        //sometimes useful
+        ArrayList<Integer> extra1;
+        ArrayList<Integer> extra2;
+        String extrastring;
+    }
     public static class NotLoggedInException extends Exception{
         public NotLoggedInException(){
             super("User isn't logged in");
