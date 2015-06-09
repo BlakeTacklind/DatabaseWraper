@@ -7,34 +7,36 @@ friendship Rejected = 3
 
 Trade Requested = 10
 Trade Denied = 11
-Request Location = 12 (assumed accepted)
+Trade Accepted - Request Location = 12
 Location Denied - new location = 13
-Location Accepted = 14
-Trade Completed = 15
+Trade Cancelled = 14
+Trade Completed = 15 - After cleared, items switch owners
 
-MiddleMan Requested = 20
-MiddleMan Accepted = 21
-MiddleMan Rejected = 22
+Middle Man Requested = 20
+Middle Man Accepted = 21
+Middle Man Rejected = 22
+    OR
+Middle Man Notification = 25
 */
 public class Request{
-    private int requestID, type, fromID, toID, extraInt;
-    private int[] extra1, extra2;
-    private String extrastring;
+    private int requestID, type, fromID, toID, mmID;
+    private int[] toItems, fromItems;
+    private String extraString;
 
     public Request(int id, int ty, int frm, int to, int ei,int[] e1, int[] e2, String es){
         requestID = id;
         type = ty;
         fromID = frm;
         toID = to;
-        extra1 = e1;
-        extra2 = e2;
-        extrastring = es;
-        extraInt = ei;
+        toItems = e1;
+        fromItems = e2;
+        extraString = es;
+        mmID = ei;
     }
 
     public String toString(){
         return "requestID: " + requestID + ", type: " + type + ", fromID: " + fromID +
-                ", toID: " + toID + " , extraInt: " + extraInt + ", extra1: " + extra1 + ", extra2: " + extra2 +
-                ", extrastring: \"" + extrastring + "\".";
+                ", toID: " + toID + " , mmID: " + mmID + ", toItems: " + toItems + ", fromItems: " + fromItems +
+                ", extrastring: \"" + extraString + "\".";
     }
 }

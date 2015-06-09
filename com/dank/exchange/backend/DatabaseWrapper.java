@@ -55,7 +55,86 @@ public class DatabaseWrapper{
                 e.printStackTrace();
             }
     }
+    private static abstract class SELECT<OutputType> extends AsyncTask<Integer, Integer, OutputType> {
+        private String sql;
 
+        public SELECT(String SQLquerry){
+            super();
+            sql = SQLquerry;
+        }
+
+        protected abstract void middle(ResultSet rs) throws SQLException;
+        protected abstract OutputType endBackground();
+        protected void postRead(){}
+
+        protected OutputType doInBackground(Integer... in){
+            ArrayList<User> output = new ArrayList<User>();
+
+            Statement st = null;
+            ResultSet rs = null;
+            try {
+                start();
+                st = conn.createStatement();
+                rs = st.executeQuery(sql);
+
+                while(rs.next()) {
+                    middle(rs);
+                }
+                postRead();
+
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            finally {
+                try {
+                    if (rs != null)
+                        rs.close();
+                    if (st != null)
+                        st.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+                stop();
+            }
+
+            return endBackground();
+        }
+    }
+    private static abstract class ALTER<ReturnType> extends AsyncTask<Integer, Integer, ReturnType>{
+        private String sql;
+
+        protected ALTER(String SQLstatement){
+            sql = SQLstatement;
+        }
+
+        protected abstract void setValues(PreparedStatement st) throws SQLException;
+        protected abstract ReturnType returnThis();
+
+        protected ReturnType doInBackground(Integer... params) {
+            PreparedStatement st = null;
+            try {
+                start();
+                st = conn.prepareStatement(sql);
+                setValues(st);
+                st.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            finally {
+                if (st != null)
+                    try {
+                        st.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+                stop();
+            }
+
+            return returnThis();
+        }
+    }
+    
     /*
     Give your user name
     prints error if failed
@@ -236,52 +315,6 @@ public class DatabaseWrapper{
         }
     }
 
-    private static abstract class SELECT<OutputType> extends AsyncTask<Integer, Integer, OutputType> {
-        private String sql;
-
-        public SELECT(String SQLquerry){
-            super();
-            sql = SQLquerry;
-        }
-
-        protected abstract void middle(ResultSet rs) throws SQLException;
-        protected abstract OutputType endBackground();
-        protected void postRead(){}
-
-        protected OutputType doInBackground(Integer... in){
-            ArrayList<User> output = new ArrayList<User>();
-
-            Statement st = null;
-            ResultSet rs = null;
-            try {
-                start();
-                st = conn.createStatement();
-                rs = st.executeQuery(sql);
-
-                while(rs.next()) {
-                    middle(rs);
-                }
-                postRead();
-
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            finally {
-                try {
-                    if (rs != null)
-                        rs.close();
-                    if (st != null)
-                        st.close();
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-                stop();
-            }
-
-            return endBackground();
-        }
-    }
-
     /*
 
     */
@@ -350,7 +383,7 @@ public class DatabaseWrapper{
         private ArrayList<Item> output;
 
         public getKnapsackTask(int id) {
-            super("SELECT * FROM items WHERE heldby = "+id+";");
+            super("SELECT * FROM items WHERE heldby = "+id+" AND \"inTrade\" = FALSE;");
             output = new ArrayList<Item>();
         }
 
@@ -408,41 +441,6 @@ public class DatabaseWrapper{
         @Override
         protected Integer endBackground() {
             return itemNum;
-        }
-    }
-
-    private static abstract class ALTER<ReturnType> extends AsyncTask<Integer, Integer, ReturnType>{
-        private String sql;
-
-        protected ALTER(String SQLstatement){
-            sql = SQLstatement;
-        }
-
-        protected abstract void setValues(PreparedStatement st) throws SQLException;
-        protected abstract ReturnType returnThis();
-
-        protected ReturnType doInBackground(Integer... params) {
-            PreparedStatement st = null;
-            try {
-                start();
-                st = conn.prepareStatement(sql);
-                setValues(st);
-                st.executeUpdate();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-            finally {
-                if (st != null)
-                    try {
-                        st.close();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-
-                stop();
-            }
-
-            return returnThis();
         }
     }
 
@@ -709,7 +707,50 @@ public class DatabaseWrapper{
     returns true if successfully posted request
     */
     public static boolean requestTrade(int id, ArrayList<Item> myItems, ArrayList<Item> theirItems) throws TimeoutException, NotLoggedInException {
+        if (userID == 0) throw new NotLoggedInException();
+
+        requestTradeTask rt = new requestTradeTask(id, myItems, theirItems);
+
+        try {
+            if (rt.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
+                return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
         return false;
+    }
+    private static class requestTradeTask extends SELECT<Integer>{
+        private int output;
+
+        public requestTradeTask(int theirID, ArrayList<Item> myI, ArrayList<Item> thI) {
+            super("SELECT \"newTradeRequest\" ("+userID+", "+theirID+", "+ArrL2String(myI)+ ", "+ArrL2String(thI)+");");
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("newTradeRequest");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
+    }
+    private static String ArrL2String(ArrayList<Item> list){
+        if (list == null || list.size() == 0) return "'{}'";
+
+        StringBuilder builder = new StringBuilder("'{"+list.get(0).id());
+
+        for (int i = 1; i < list.size(); i++) {
+            builder.append(", " + list.get(i).id());
+        }
+
+        builder.append("}'");
+
+        return builder.toString();
     }
 
     /*
@@ -717,7 +758,36 @@ public class DatabaseWrapper{
     returns true if successful
      */
     public static boolean declineTrade(int requestID) throws TimeoutException, NotLoggedInException {
+        if (userID == 0) throw new NotLoggedInException();
+
+        declineTradeTask dt = new declineTradeTask(requestID);
+
+        try {
+            if(dt.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
+                return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
         return false;
+    }
+    private static class declineTradeTask extends SELECT<Integer>{
+        private int output;
+
+        public declineTradeTask(int id) {
+            super("SELECT \"declineTrade\" ("+userID+", "+id+");");
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("declineTrade");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
     }
 
     /*
@@ -725,7 +795,38 @@ public class DatabaseWrapper{
     returns true if successfully posted response
     */
     public static boolean respondLocation(int requestID, String location) throws TimeoutException, NotLoggedInException {
+        if (userID == 0) throw new NotLoggedInException();
+
+        respondLocationTask rl = new respondLocationTask(requestID, location);
+
+        try {
+            if(rl.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
+                return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
         return false;
+    }
+    private static class respondLocationTask extends SELECT<Integer>{
+        private int output;
+
+        public respondLocationTask(int id, String loc) {
+            super("SELECT \"acceptTrade\" ("+userID+", "+id+", '"+loc+"');");
+            output = 0;
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("acceptTrade");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
     }
 
     /*
@@ -733,23 +834,75 @@ public class DatabaseWrapper{
     returns true if successful
      */
     public static boolean acceptLocation(int requestID) throws TimeoutException, NotLoggedInException{
+        if (userID == 0) throw new NotLoggedInException();
+
+        acceptLocationTask al = new acceptLocationTask(requestID);
+
+        try {
+            if(al.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
+                return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
         return false;
+    }
+    private static class acceptLocationTask extends SELECT<Integer>{
+        private int output;
+
+        public acceptLocationTask(int reqID) {
+            super("SELECT \"acceptLocation\" ("+userID+", "+reqID+");");
+            output = 0;
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("acceptLocation");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
     }
 
     /*
-    request a middle man by ID
+    Completes the trade Items exchange hands
     returns true if successful
      */
-    public static boolean requestMiddleMan(int requestID, int middleManID) throws TimeoutException, NotLoggedInException{
+    public static boolean completeTrade(int requestID)  throws TimeoutException, NotLoggedInException {
+        if (userID == 0) throw new NotLoggedInException();
+
+        completeTradeTask ct = new completeTradeTask(requestID);
+
+        try {
+            if (ct.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
+                return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
         return false;
     }
+    private static class completeTradeTask extends SELECT<Integer>{
+        private int output;
 
-    /*
-    Middle man responds to a request
-    Returns true is successfully posted
-     */
-    public static boolean middlemanResponse(int requestID, Boolean answer) throws TimeoutException, NotLoggedInException{
-        return false;
+        public completeTradeTask(int reqID) {
+            super("SELECT \"completeTrade\" ("+userID+", "+reqID+");");
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("completeTrade");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
     }
 
 }
