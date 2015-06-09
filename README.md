@@ -6,15 +6,12 @@
 ## Datatypes
 
 #### User
-* ID: users unique ID
 * Name: users unique name
 
 #### Item
-* ID: items unique ID
 * Name: items name
 
 #### Request
-* ID: request unique ID
 * FromUser: User the request is from
 * ToUser: User the request is for
 * FromItems: ArrayList of Items the From User has and wants to trade
@@ -31,13 +28,13 @@ returns true if successful
 boolean logIn(String name) throws TimeoutException 
 ```
 
-Add the user by string<br>
+Add the new user by String<br>
 return true if success
 ```Java
 boolean addUser(String name) throws TimeoutException 
 ```
 
-Delete user (self)<br>
+Delete currently logged in user<br>
 returns true if successful
 ```Java
 boolean deleteSelf() throws TimeoutException, NotLoggedInException 
@@ -49,16 +46,16 @@ may return null if failed
 ArrayList<User> getFriends() throws TimeoutException, NotLoggedInException 
 ```
 
-returns mutual friends of logged in user and user with id<br>
+returns mutual friends of logged in user and user given<br>
 may return null if failed
 ```Java
-ArrayList<User> getMutualFriends(int id) throws TimeoutException, NotLoggedInException 
+ArrayList<User> getMutualFriends(User friend) throws TimeoutException, NotLoggedInException 
 ```
 
-Give a user id (or name, not preferable)<br>
-returns contents of knapsack
+Give a user<br>
+returns contents of their knapsack
 ```Java
-ArrayList<Item> getKnapsack(int id) throws TimeoutException 
+ArrayList<Item> getKnapsack(User user) throws TimeoutException 
 ```
 
 add item named string to knapsack<br>
@@ -67,10 +64,10 @@ returns true if posted
 boolean addToKnapsack(String itemName) throws TimeoutException, NotLoggedInException 
 ```
 
-remove item with id from knapsack<br>
+remove item from knapsack<br>
 returns true if removed successfully
 ```Java
-boolean removeFromKnapsack(int itemNumber) throws TimeoutException, NotLoggedInException 
+boolean removeFromKnapsack(Item item) throws TimeoutException, NotLoggedInException 
 ```
 
 Get requests TO the logged in user<br>
@@ -85,7 +82,7 @@ Returns the list of requests
 ArrayList<Request> getRequestsFrom() throws TimeoutException, NotLoggedInException
 ```
 
-Pass username to befriend<br>
+Pass username to send friend request from current logged in user<br>
 returns true if successfully posted
 ```Java
 boolean requestFriendship(String name) throws TimeoutException, NotLoggedInException 
@@ -94,77 +91,77 @@ boolean requestFriendship(String name) throws TimeoutException, NotLoggedInExcep
 Pass in yes or no to response, and request number<br>
 returns true if successfully posted response
 ```Java
-boolean respondFriendship(int requestID, boolean response) throws TimeoutException, NotLoggedInException 
+boolean respondFriendship(Request request, boolean response) throws TimeoutException, NotLoggedInException 
 ```
 
 clears a notification.<br>
 Works with friendship Accepted, friendship Rejected, Trade Denied, Middle Man Notification, and Trade Cancelled<br>
 returns true if successful
 ```Java
-boolean clearRequest(int requestID) throws TimeoutException, NotLoggedInException 
+boolean clearRequest(Request request) throws TimeoutException, NotLoggedInException 
 ```
 
 Removes friendship relation<br>
 (should also remove current requests between users?)<br>
 returns true if successful
 ```Java
-boolean removeFriendship(int friendID) throws TimeoutException, NotLoggedInException 
+boolean removeFriendship(User friend) throws TimeoutException, NotLoggedInException 
 ```
 
-Pass: id, my item(s) to trade, their item(s) to trade<br>
+User to trade with, my item(s) to trade, their item(s) to trade<br>
 (temporarily removes items to be traded from senders knapsack?)<br>
 returns true if successfully posted request
 ```Java
-boolean requestTrade(int id, ArrayList<Item> myItems, ArrayList<Item> theirItems) throws TimeoutException, NotLoggedInException 
+boolean requestTrade(User friend, ArrayList<Item> myItems, ArrayList<Item> theirItems) throws TimeoutException, NotLoggedInException 
 ```
 
-Decline the trade defined by requestID<br>
+Decline the trade request<br>
 returns true if successful
 ```Java
-boolean declineTrade(int requestID) throws TimeoutException, NotLoggedInException 
+boolean declineTrade(Request request) throws TimeoutException, NotLoggedInException 
 ```
 
-int: request number, string: location name<br>
+Pass in: Request to respond to and location name in string<br>
 returns true if successfully posted response
 ```Java
-boolean respondLocation(int requestID, String location) throws TimeoutException, NotLoggedInException 
+boolean respondLocation(Request request, String location) throws TimeoutException, NotLoggedInException 
 ```
 
-Accept the location of trade defined by requestID<br>
+Accept the location of trade request<br>
 returns true if successful
 ```Java
-boolean acceptLocation(int requestID) throws TimeoutException, NotLoggedInException
+boolean acceptLocation(Request request) throws TimeoutException, NotLoggedInException
 ```
 
-Completes the trade Items exchange hands<br>
+Completes the trade, Items exchange hands<br>
 returns true if successful
 ```Java
-boolean completeTrade(int requestID) throws TimeoutException, NotLoggedInException 
+boolean completeTrade(Request request) throws TimeoutException, NotLoggedInException 
 ```
 
 Canceled a trade that has been accepted by both parties - Can be done by either<br>
 returns true if successful
 ```Java
-boolean cancelTrade(int requestID) throws TimeoutException, NotLoggedInException 
+boolean cancelTrade(Request request) throws TimeoutException, NotLoggedInException 
 ```
 
 ---
 #### Not implemented - yet
 
-set middle man status of logged in user as input<br>
+set middle man status of logged in user<br>
 returns true if successful
 ```Java
 boolean setMiddleMan(boolean canMiddleMan) throws TimeoutException, NotLoggedInException 
 ```
 
-Get List of middle men mutual to logged in user and friendID<br>
+Get List of middle men mutual to logged in user and friend<br>
 returns list of mutual middle men
 ```Java
-ArrayList<User> getMutualMiddleMen(int friendID) throws TimeoutException, NotLoggedInException
+ArrayList<User> getMutualMiddleMen(User friend) throws TimeoutException, NotLoggedInException
 ```
 
 Start a trade with a middleman<br>
 returns true if successful
 ```Java
-boolean middleManTrade(int theirID, int middleManID, ArrayList<Item> items, boolean toThem) throws TimeoutException, NotLoggedInException
+boolean middleManTrade(User them, User middleman, ArrayList<Item> items, boolean toThem) throws TimeoutException, NotLoggedInException
 ```

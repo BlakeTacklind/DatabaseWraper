@@ -168,7 +168,7 @@ public class DatabaseWrapper{
     }
 
     /*
-    Add the user by string
+    Add the new user by String
     return true if success
     */
     public static boolean addUser(String name) throws TimeoutException {
@@ -207,7 +207,7 @@ public class DatabaseWrapper{
     }
 
     /*
-    Delete user (self)
+    Delete currently logged in user
     returns true if successful
     */
     public static boolean deleteSelf() throws TimeoutException, NotLoggedInException {
@@ -289,13 +289,13 @@ public class DatabaseWrapper{
     }
 
     /*
-    returns mutual friends of logged in user and user with id
+    returns mutual friends of logged in user and user given
 	may return null if failed
     */
-    public static ArrayList<User> getMutualFriends(int id) throws TimeoutException, NotLoggedInException {
+    public static ArrayList<User> getMutualFriends(User friend) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
-        getMutualTask mf = new getMutualTask(id);
+        getMutualTask mf = new getMutualTask(friend.getID());
 
         try {
             return mf.execute().get(timeOutLong, TimeUnit.MILLISECONDS);
@@ -332,11 +332,11 @@ public class DatabaseWrapper{
     }
 
     /*
-    Give a user id (or name, not preferable)
-    returns contents of knapsack
+    Give a user
+    returns contents of their knapsack
     */
-    public static ArrayList<Item> getKnapsack(int id) throws TimeoutException {
-        getKnapsackTask k = new getKnapsackTask(id);
+    public static ArrayList<Item> getKnapsack(User user) throws TimeoutException {
+        getKnapsackTask k = new getKnapsackTask(user.getID());
 
         try {
             return k.execute().get(timeOutLong,TimeUnit.MILLISECONDS);
@@ -416,14 +416,14 @@ public class DatabaseWrapper{
             "LEFT JOIN users AS u3 ON requests.\"extraInt\" = u3.userid";
 
     /*
-    remove item with id from knapsack
+    remove item from knapsack
     returns true if removed successfully
     */
-    public static boolean removeFromKnapsack(int itemNumber) throws TimeoutException, NotLoggedInException {
+    public static boolean removeFromKnapsack(Item item) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
         try {
-            return new removeItemTask(itemNumber).execute().get(timeOut, TimeUnit.MILLISECONDS);
+            return new removeItemTask(item.getID()).execute().get(timeOut, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -578,7 +578,7 @@ public class DatabaseWrapper{
     }
 
     /*
-    Pass username to befriend
+    Pass username to send friend request from current logged in user
     returns true if successfully posted
     */
     public static boolean requestFriendship(String name) throws TimeoutException, NotLoggedInException {
@@ -617,17 +617,17 @@ public class DatabaseWrapper{
     }
 
     /*
-    Pass in yes or no to response, and request number
+    Pass in yes or no to respond to Friend request
     returns true if successfully posted response
     */
-    public static boolean respondFriendship(int requestID, boolean response) throws TimeoutException, NotLoggedInException {
+    public static boolean respondFriendship(Request request, boolean response) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
         String s;
         if (response) s = "true";
         else s = "false";
 
-        respondFriendshipTask fr = new respondFriendshipTask(requestID, s);
+        respondFriendshipTask fr = new respondFriendshipTask(request.getID(), s);
 
         try {
             if (fr.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
@@ -664,10 +664,10 @@ public class DatabaseWrapper{
     Works with friendship Accepted, friendship Rejected, Trade Denied, Middle Man Notification, and Trade Cancelled
     returns true if successful
     */
-    public static boolean clearRequest(int requestID) throws TimeoutException, NotLoggedInException {
+    public static boolean clearRequest(Request request) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
-        clearRequestTask cr = new clearRequestTask(requestID);
+        clearRequestTask cr = new clearRequestTask(request.getID());
 
         try {
             if (cr.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
@@ -704,10 +704,10 @@ public class DatabaseWrapper{
     (should also remove current requests between users?)
     returns true if successful
     */
-    public static boolean removeFriendship(int friendID) throws TimeoutException, NotLoggedInException {
+    public static boolean removeFriendship(User friend) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
-        removeFriendshipTask rf = new removeFriendshipTask(friendID);
+        removeFriendshipTask rf = new removeFriendshipTask(friend.getID());
 
         try {
             if (rf.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
@@ -740,14 +740,14 @@ public class DatabaseWrapper{
     }
 
     /*
-    Pass: id, my item(s) to trade, their item(s) to trade
+    User to trade with, my item(s) to trade, their item(s) to trade
     (temporarily removes items to be traded from senders knapsack?)
     returns true if successfully posted request
     */
-    public static boolean requestTrade(int id, ArrayList<Item> myItems, ArrayList<Item> theirItems) throws TimeoutException, NotLoggedInException {
+    public static boolean requestTrade(User them, ArrayList<Item> myItems, ArrayList<Item> theirItems) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
-        requestTradeTask rt = new requestTradeTask(id, myItems, theirItems);
+        requestTradeTask rt = new requestTradeTask(them.getID(), myItems, theirItems);
 
         try {
             if (rt.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
@@ -792,13 +792,13 @@ public class DatabaseWrapper{
     }
 
     /*
-    Decline the trade defined by requestID
+    Decline the trade request
     returns true if successful
      */
-    public static boolean declineTrade(int requestID) throws TimeoutException, NotLoggedInException {
+    public static boolean declineTrade(Request request) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
-        declineTradeTask dt = new declineTradeTask(requestID);
+        declineTradeTask dt = new declineTradeTask(request.getID());
 
         try {
             if(dt.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
@@ -829,13 +829,13 @@ public class DatabaseWrapper{
     }
 
     /*
-    int: request number, string: location name
+    Pass in: Request to respond to and location name in string
     returns true if successfully posted response
     */
-    public static boolean respondLocation(int requestID, String location) throws TimeoutException, NotLoggedInException {
+    public static boolean respondLocation(Request request, String location) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
-        respondLocationTask rl = new respondLocationTask(requestID, location);
+        respondLocationTask rl = new respondLocationTask(request.getID(), location);
 
         try {
             if(rl.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
@@ -868,13 +868,13 @@ public class DatabaseWrapper{
     }
 
     /*
-    Accept the location of trade defined by requestID
+    Accept the location of trade request
     returns true if successful
      */
-    public static boolean acceptLocation(int requestID) throws TimeoutException, NotLoggedInException{
+    public static boolean acceptLocation(Request request) throws TimeoutException, NotLoggedInException{
         if (userID == 0) throw new NotLoggedInException();
 
-        acceptLocationTask al = new acceptLocationTask(requestID);
+        acceptLocationTask al = new acceptLocationTask(request.getID());
 
         try {
             if(al.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
@@ -906,13 +906,13 @@ public class DatabaseWrapper{
     }
 
     /*
-    Completes the trade Items exchange hands
+    Completes the trade, Items exchange hands
     returns true if successful
      */
-    public static boolean completeTrade(int requestID) throws TimeoutException, NotLoggedInException {
+    public static boolean completeTrade(Request request) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
-        completeTradeTask ct = new completeTradeTask(requestID);
+        completeTradeTask ct = new completeTradeTask(request.getID());
 
         try {
             if (ct.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
@@ -947,10 +947,10 @@ public class DatabaseWrapper{
     Canceled a trade that has been accepted by both parties - Can be done by either
     returns true if successful
      */
-    public static boolean cancelTrade(int requestID) throws TimeoutException, NotLoggedInException {
+    public static boolean cancelTrade(Request request) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
-        cancelTradeTask ct = new cancelTradeTask(requestID);
+        cancelTradeTask ct = new cancelTradeTask(request.getID());
 
         try {
             if (ct.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
@@ -984,7 +984,7 @@ public class DatabaseWrapper{
     }
 
     /*
-    set middle man status of logged in user as input<br>
+    set middle man status of logged in user
     returns true if successful
     */
     public static boolean setMiddleMan(boolean can) throws TimeoutException, NotLoggedInException {
@@ -992,10 +992,10 @@ public class DatabaseWrapper{
     }
 
     /*
-    Get List of middle men mutual to logged in user and friendID<br>
+    Get List of middle men mutual to logged in user and friend
     returns list of mutual middle men
     */
-    public static ArrayList<User> getMutualMiddleMen(int friendID) throws TimeoutException, NotLoggedInException{
+    public static ArrayList<User> getMutualMiddleMen(User friend) throws TimeoutException, NotLoggedInException{
         return null;
     }
 
@@ -1003,7 +1003,7 @@ public class DatabaseWrapper{
     Start a trade with a middleman
     returns true if successful
     */
-    public static boolean middleManTrade(int theirID, int middleManID, ArrayList<Item> items, boolean toThem) throws TimeoutException, NotLoggedInException{
+    public static boolean middleManTrade(User them, User middleMan, ArrayList<Item> items, boolean toThem) throws TimeoutException, NotLoggedInException{
         return false;
     }
 }

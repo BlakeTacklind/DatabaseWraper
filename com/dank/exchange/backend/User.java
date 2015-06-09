@@ -6,7 +6,7 @@ public class User{
         name = n;
     }
 
-    public int getID(){return id;}
+    int getID(){return id;}
     public String getName(){return name;}
 
     public String toString(){

@@ -39,7 +39,7 @@ public class Request{
         extraString = es;
     }
 
-    public int getID(){return requestID;}
+    int getID(){return requestID;}
     public int getType(){return type;}
     public User getToUser(){return to;}
     public User getFromUser(){return from;}

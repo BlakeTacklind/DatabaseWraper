@@ -13,7 +13,7 @@ public class Item{
         inTrade = b;
     }
 
-    public int getID(){return id;}
+    int getID(){return id;}
     public String getName(){return name;}
     public boolean getInTrade(){return inTrade;}
 
