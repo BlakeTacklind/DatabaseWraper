@@ -170,11 +170,6 @@ public class DatabaseWrapper{
         }
 
         @Override
-        protected void postRead() {
-
-        }
-
-        @Override
         protected Integer endBackground() {
             return userID;
         }
@@ -214,11 +209,6 @@ public class DatabaseWrapper{
         }
 
         @Override
-        protected void postRead() {
-
-        }
-
-        @Override
         protected Integer endBackground() {
             return userID;
         }
@@ -229,11 +219,10 @@ public class DatabaseWrapper{
     returns true if successful
     */
     public static boolean deleteSelf() throws TimeoutException, NotLoggedInException {
-        if (userID == 0){
-            throw new NotLoggedInException();
-        }
+        if (userID == 0) throw new NotLoggedInException();
 
         deleteSelfTask d = new deleteSelfTask();
+
         try {
             d.execute().get(timeOut, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -262,11 +251,6 @@ public class DatabaseWrapper{
         }
 
         @Override
-        protected void postRead() {
-
-        }
-
-        @Override
         protected Integer endBackground() {
             return returned;
         }
@@ -276,8 +260,7 @@ public class DatabaseWrapper{
 	    return your list of friends
     */
     public static ArrayList<User> getFriends() throws TimeoutException, NotLoggedInException {
-        if (userID == 0)
-            throw new NotLoggedInException();
+        if (userID == 0) throw new NotLoggedInException();
 
         getFriendsTask f = new getFriendsTask();
         try {
@@ -304,11 +287,6 @@ public class DatabaseWrapper{
         @Override
         protected void middle(ResultSet rs) throws SQLException {
             output.add(new User(rs.getInt("userid"), rs.getString("username")));
-        }
-
-        @Override
-        protected void postRead() {
-
         }
 
         @Override
@@ -354,11 +332,6 @@ public class DatabaseWrapper{
         }
 
         @Override
-        protected void postRead() {
-
-        }
-
-        @Override
         protected ArrayList<User> endBackground() {
             return out;
         }
@@ -395,11 +368,6 @@ public class DatabaseWrapper{
         }
 
         @Override
-        protected void postRead() {
-
-        }
-
-        @Override
         protected ArrayList<Item> endBackground() {
             return output;
         }
@@ -433,11 +401,6 @@ public class DatabaseWrapper{
         @Override
         protected void middle(ResultSet rs) throws SQLException {
             rs.getInt("additem");
-        }
-
-        @Override
-        protected void postRead() {
-
         }
 
         @Override
@@ -488,16 +451,15 @@ public class DatabaseWrapper{
         }
 
         @Override
-        protected void postRead() {
-
-        }
-
-        @Override
         protected Boolean endBackground() {
             return ret;
         }
     }
 
+    /*
+    Get requests TO the logged in user
+    Returns the list of requests
+     */
     public static ArrayList<Request> getRequestsTo() throws TimeoutException, NotLoggedInException {
         if (userID == 0)throw new NotLoggedInException();
 
@@ -527,16 +489,15 @@ public class DatabaseWrapper{
         }
 
         @Override
-        protected void postRead() {
-
-        }
-
-        @Override
         protected ArrayList<Request> endBackground() {
             return output;
         }
     }
 
+    /*
+    Get requests FROM the logged in user
+    Returns the list of requests
+     */
     public static ArrayList<Request> getRequestsFrom() throws TimeoutException, NotLoggedInException{
         if (userID == 0) throw new NotLoggedInException();
 
@@ -550,7 +511,6 @@ public class DatabaseWrapper{
             e.printStackTrace();
         }
 
-        Log.e("getRequestsFrom", "NULL!");
         return null;
     }
     private static class getRequestsFromTask extends SELECT<ArrayList<Request>>{
@@ -574,6 +534,7 @@ public class DatabaseWrapper{
 
     private static Request getRequest (ResultSet rs) throws SQLException {
         int type = rs.getInt("type");
+        int id = rs.getInt("id");
         User u1 = new User(rs.getInt("from"), rs.getString("fromName"));
         User u2 = new User(rs.getInt("to"), rs.getString("toName"));
 
@@ -581,16 +542,20 @@ public class DatabaseWrapper{
             case 1:
             case 2:
             case 3:
-                return new Request(rs.getInt("id"), type, u1, u2, null, null, null, null);
-            case 10:
-                return new Request(rs.getInt("id"), type, u1, u2, null,
-                        ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
-                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")), null);
             case 11:
             case 14:
-            case 15:
+                return new Request(id, type, u1, u2, null, null, null, null);
+            case 10:
+                return new Request(id, type, u1, u2, null,
+                        ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
+                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")), null);
             case 12:
             case 13:
+            case 15:
+                return new Request(id, type, u1, u2, null,
+                        ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
+                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")),
+                        rs.getString("extrastring"));
             case 25:
             default:
                 Log.e("getRequest", "Yell at Blake: Request Type not implemented!");
@@ -646,11 +611,6 @@ public class DatabaseWrapper{
         @Override
         protected void middle(ResultSet rs) throws SQLException {
             out = rs.getInt("addfriend");
-        }
-
-        @Override
-        protected void postRead() {
-
         }
 
         @Override
