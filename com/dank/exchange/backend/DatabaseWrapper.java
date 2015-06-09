@@ -134,7 +134,7 @@ public class DatabaseWrapper{
             return returnThis();
         }
     }
-    
+
     /*
     Give your user name
     prints error if failed
@@ -536,7 +536,7 @@ public class DatabaseWrapper{
 
     /*
     Pass user id to befriend
-    returns true if succefully posted
+    returns true if successfully posted
     */
     public static boolean requestFriendship(String name) throws TimeoutException, NotLoggedInException {
         if (userID == 0)throw new NotLoggedInException();
@@ -623,8 +623,10 @@ public class DatabaseWrapper{
     }
 
     /*
-    Respond to a generic notification
-     */
+    clears a notification.
+    Works with friendship Accepted, friendship Rejected, Trade Denied, Middle Man Notification, and Trade Cancelled
+    returns true if successful
+    */
     public static boolean clearRequest(int requestID) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
@@ -663,8 +665,8 @@ public class DatabaseWrapper{
     /*
     Removes friendship relation
     (should also remove current requests between users?)
-    returns true is successful
-     */
+    returns true if successful
+    */
     public static boolean removeFriendship(int friendID) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
@@ -871,7 +873,7 @@ public class DatabaseWrapper{
     Completes the trade Items exchange hands
     returns true if successful
      */
-    public static boolean completeTrade(int requestID)  throws TimeoutException, NotLoggedInException {
+    public static boolean completeTrade(int requestID) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
 
         completeTradeTask ct = new completeTradeTask(requestID);
@@ -897,6 +899,46 @@ public class DatabaseWrapper{
         @Override
         protected void middle(ResultSet rs) throws SQLException {
             output = rs.getInt("completeTrade");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
+    }
+
+    /*
+    Canceled a trade that has been accepted by both parties - Can be done by either
+    returns true if successful
+     */
+    public static boolean cancelTrade(int requestID) throws TimeoutException, NotLoggedInException {
+        if (userID == 0) throw new NotLoggedInException();
+
+        cancelTradeTask ct = new cancelTradeTask(requestID);
+
+        try {
+            if (ct.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0)
+                return true;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } {
+
+        }
+
+        return false;
+    }
+    private static class cancelTradeTask extends SELECT<Integer>{
+        private int output;
+
+        public cancelTradeTask(int reqID) {
+            super("SELECT \"cancelTrade\" ("+userID+", "+reqID+");");
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("cancelTrade");
         }
 
         @Override

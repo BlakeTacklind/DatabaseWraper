@@ -5,11 +5,11 @@ friendship requested = 1
 friendship Accepted = 2
 friendship Rejected = 3
 
-Trade Requested = 10
+Trade Requested = 10 - your items withheld
 Trade Denied = 11
-Trade Accepted - Request Location = 12
+Trade Accepted - Request Location = 12 - both items withheld
 Location Denied - new location = 13
-Trade Cancelled = 14
+Trade Cancelled = 14 - items return to owners knapsack
 Trade Completed = 15 - After cleared, items switch owners
 
 Middle Man Requested = 20
