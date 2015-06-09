@@ -571,7 +571,7 @@ public class DatabaseWrapper{
         ArrayList<Item> arr = new ArrayList<Item>(intArr.length);
 
         for (int i = 0; i < intArr.length; i++){
-            arr.add(new Item(intArr[i], strArr[i]));
+            arr.add(new Item(intArr[i], strArr[i], true));
         }
 
         return arr;
@@ -982,6 +982,22 @@ public class DatabaseWrapper{
         protected Integer endBackground() {
             return output;
         }
+    }
+
+    /*
+    set middle man status of logged in user as input<br>
+    returns false
+    */
+    public static boolean setMiddleMan(boolean can) throws TimeoutException, NotLoggedInException {
+        return false;
+    }
+
+    /*
+    Get List of middle men mutual to logged in user and friendID<br>
+    returns null
+    */
+    public static ArrayList<User> getMutualMiddleMen(int friendID) throws TimeoutException, NotLoggedInException{
+        return null;
     }
 
 }
