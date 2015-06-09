@@ -133,7 +133,7 @@ public class DatabaseWrapper{
     Give your user name
     prints error if failed
     */
-    public static Boolean logIn(String name) throws TimeoutException {
+    public static boolean logIn(String name) throws TimeoutException {
 
         logInTask l = new logInTask(name);
 
@@ -739,7 +739,6 @@ public class DatabaseWrapper{
         }
     }
 
-
     /*
     Pass: id, my item(s) to trade, their item(s) to trade
     (temporarily removes items to be traded from senders knapsack?)
@@ -986,7 +985,7 @@ public class DatabaseWrapper{
 
     /*
     set middle man status of logged in user as input<br>
-    returns false
+    returns true if successful
     */
     public static boolean setMiddleMan(boolean can) throws TimeoutException, NotLoggedInException {
         return false;
@@ -994,10 +993,17 @@ public class DatabaseWrapper{
 
     /*
     Get List of middle men mutual to logged in user and friendID<br>
-    returns null
+    returns list of mutual middle men
     */
     public static ArrayList<User> getMutualMiddleMen(int friendID) throws TimeoutException, NotLoggedInException{
         return null;
     }
 
+    /*
+    Start a trade with a middleman
+    returns true if successful
+    */
+    public static boolean middleManTrade(int theirID, int middleManID, ArrayList<Item> items, boolean toThem) throws TimeoutException, NotLoggedInException{
+        return false;
+    }
 }

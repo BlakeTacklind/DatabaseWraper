@@ -28,7 +28,7 @@
 Give your user name<br>
 returns true if successful
 ```Java
-Boolean logIn(String name) throws TimeoutException 
+boolean logIn(String name) throws TimeoutException 
 ```
 
 Add the user by string<br>
@@ -152,13 +152,19 @@ boolean cancelTrade(int requestID) throws TimeoutException, NotLoggedInException
 #### Not implemented - yet
 
 set middle man status of logged in user as input<br>
-returns false
+returns true if successful
 ```Java
 boolean setMiddleMan(boolean canMiddleMan) throws TimeoutException, NotLoggedInException 
 ```
 
 Get List of middle men mutual to logged in user and friendID<br>
-returns null
+returns list of mutual middle men
 ```Java
 ArrayList<User> getMutualMiddleMen(int friendID) throws TimeoutException, NotLoggedInException
+```
+
+Start a trade with a middleman<br>
+returns true if successful
+```Java
+boolean middleManTrade(int theirID, int middleManID, ArrayList<Item> items, boolean toThem) throws TimeoutException, NotLoggedInException
 ```
