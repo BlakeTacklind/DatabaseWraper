@@ -1,5 +1,7 @@
 package com.dank.exchange.backend;
 
+import java.util.ArrayList;
+
 /* TYPES
 friendship requested = 1
 friendship Accepted = 2
@@ -20,23 +22,41 @@ Middle Man Notification = 25
 */
 public class Request{
     private int requestID, type, fromID, toID, mmID;
-    private int[] toItems, fromItems;
+    private ArrayList<Item> toItems, fromItems;
     private String extraString;
+    private User from;
+    private User to;
+    private User Middleman;
 
-    public Request(int id, int ty, int frm, int to, int ei,int[] e1, int[] e2, String es){
+    public Request(int id, int ty, User frm, User t, User ei, ArrayList<Item> e1, ArrayList<Item> e2, String es){
         requestID = id;
         type = ty;
-        fromID = frm;
-        toID = to;
+        from = frm;
+        to = t;
+        Middleman = ei;
         toItems = e1;
         fromItems = e2;
         extraString = es;
-        mmID = ei;
     }
 
     public String toString(){
-        return "requestID: " + requestID + ", type: " + type + ", fromID: " + fromID +
-                ", toID: " + toID + " , mmID: " + mmID + ", toItems: " + toItems + ", fromItems: " + fromItems +
-                ", extrastring: \"" + extraString + "\".";
+        String s = "requestID: " + requestID + ", type: " + type + ", from: " + from +
+                ", to: " + to + " , middle man: " + Middleman + ", toItems: " + toItems + ", " +
+                "fromItems: " + fromItems + ", extrastring: \"" + extraString + "\" itemsTo: ";
+
+        if(toItems != null)
+            for (Item i: toItems)
+                s += (i + ", ");
+        else
+            s += "null";
+
+        s += " itemsFrom: ";
+        if(fromItems != null)
+            for (Item i: fromItems)
+                s += (i + ", ");
+        else
+            s += "null";
+
+        return s + ".";
     }
 }

@@ -3,6 +3,7 @@ package com.dank.exchange.backend;
 import android.os.AsyncTask;
 import android.util.Log;
 
+import java.sql.Array;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -10,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -444,6 +446,18 @@ public class DatabaseWrapper{
         }
     }
 
+    private static final String requestsQuery = "SELECT requests.id, \"type\", " +
+            "\"from\", u1.username AS \"fromName\", \"to\", u2.username AS \"toName\", " +
+            "extra1, ARRAY(SELECT items.name FROM items JOIN requests AS r1 " +
+            "ON items.id = ANY(r1.extra1) WHERE r1.id = requests.id) AS items1, " +
+            "extra2, ARRAY(SELECT items.name FROM items JOIN requests AS r1 " +
+            "ON items.id = ANY(r1.extra2) WHERE r1.id = requests.id) AS items2, " +
+            "\"extraInt\", u3.username AS \"mmName\", extrastring " +
+            "FROM requests " +
+            "JOIN users AS u1 ON requests.from = u1.userid " +
+            "JOIN users AS u2 ON requests.to = u2.userid " +
+            "LEFT JOIN users AS u3 ON requests.\"extraInt\" = u3.userid";
+
     /*
     remove item with id from knapsack
     returns true if removed successfully
@@ -490,7 +504,7 @@ public class DatabaseWrapper{
         getRequestToTask rq = new getRequestToTask();
 
         try {
-            return rq.execute().get(timeOut, TimeUnit.MILLISECONDS);
+            return rq.execute().get(timeOutLong, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
@@ -503,24 +517,13 @@ public class DatabaseWrapper{
         private ArrayList<Request> output;
 
         public getRequestToTask() {
-            super("SELECT * FROM requests WHERE \"to\" = "+userID+";");
+            super(requestsQuery + " WHERE \"to\" = "+userID+";");
             output = new ArrayList<Request>();
         }
 
         @Override
         protected void middle(ResultSet rs) throws SQLException {
-            int type = rs.getInt("type");
-
-            switch (type){
-                case 1:
-                case 2:
-                case 3:
-                    output.add(new Request(rs.getInt("id"), type, rs.getInt("from"), rs.getInt("to"), 0, null, null, null));
-                    return;
-                default:
-                    Log.e("getRequestsTo", "Request Type not implemented!");
-            }
-
+            output.add(getRequest(rs));
         }
 
         @Override
@@ -534,8 +537,86 @@ public class DatabaseWrapper{
         }
     }
 
+    public static ArrayList<Request> getRequestsFrom() throws TimeoutException, NotLoggedInException{
+        if (userID == 0) throw new NotLoggedInException();
+
+        getRequestsFromTask rf = new getRequestsFromTask();
+
+        try {
+            return rf.execute().get(timeOutLong,TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        Log.e("getRequestsFrom", "NULL!");
+        return null;
+    }
+    private static class getRequestsFromTask extends SELECT<ArrayList<Request>>{
+        private ArrayList<Request> output;
+
+        public getRequestsFromTask() {
+            super(requestsQuery+" WHERE \"from\" = "+userID+";");
+            output = new ArrayList<Request>();
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output.add(getRequest(rs));
+        }
+
+        @Override
+        protected ArrayList<Request> endBackground() {
+            return output;
+        }
+    }
+
+    private static Request getRequest (ResultSet rs) throws SQLException {
+        int type = rs.getInt("type");
+        User u1 = new User(rs.getInt("from"), rs.getString("fromName"));
+        User u2 = new User(rs.getInt("to"), rs.getString("toName"));
+
+        switch (type){
+            case 1:
+            case 2:
+            case 3:
+                return new Request(rs.getInt("id"), type, u1, u2, null, null, null, null);
+            case 10:
+                return new Request(rs.getInt("id"), type, u1, u2, null,
+                        ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
+                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")), null);
+            case 11:
+            case 14:
+            case 15:
+            case 12:
+            case 13:
+            case 25:
+            default:
+                Log.e("getRequest", "Yell at Blake: Request Type not implemented!");
+                return new Request(rs.getInt("id"), type, u1, u2, new User(rs.getInt("extraInt"), rs.getString("mmName")), null, null, null);
+        }
+    }
+    private static ArrayList<Item> ArraysToItems (Array ia, Array sa) throws SQLException {
+        Integer[] intArr = (Integer[]) ia.getArray();
+        String[] strArr = (String[]) sa.getArray();
+
+        if (intArr.length != strArr.length){
+            Log.e("ArraysToItems", "Not matching number of id to name for items!");
+            return null;
+        }
+
+        ArrayList<Item> arr = new ArrayList<Item>(intArr.length);
+
+        for (int i = 0; i < intArr.length; i++){
+            arr.add(new Item(intArr[i], strArr[i]));
+        }
+
+        return arr;
+    }
+
     /*
-    Pass user id to befriend
+    Pass username to befriend
     returns true if successfully posted
     */
     public static boolean requestFriendship(String name) throws TimeoutException, NotLoggedInException {
@@ -580,7 +661,6 @@ public class DatabaseWrapper{
 
     /*
     Pass in yes or no to response, and request number
-    Works with request type
     returns true if successfully posted response
     */
     public static boolean respondFriendship(int requestID, boolean response) throws TimeoutException, NotLoggedInException {
