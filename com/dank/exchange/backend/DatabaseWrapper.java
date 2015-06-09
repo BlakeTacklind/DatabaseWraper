@@ -34,14 +34,6 @@ public class DatabaseWrapper{
             e.printStackTrace();
         }
 
-        //Properties props = new Properties();
-        //props.setProperty("user", username);
-        //props.setProperty("password", password);
-        //props.setProperty("sslfactory", "org.postgresql.ssl.NonValidatingFactory");
-        //props.setProperty("ssl", "true");
-        //props.setProperty("loginTimeout", "5");
-        //props.setProperty("socketTimeout", "15");
-
         conn = DriverManager.getConnection(url, username, password);
 
         if (conn == null || conn.isClosed()){
@@ -257,7 +249,8 @@ public class DatabaseWrapper{
     }
 
 	/*
-	    return your list of friends
+	return your list of friends
+	may return null if failed
     */
     public static ArrayList<User> getFriends() throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
@@ -296,7 +289,8 @@ public class DatabaseWrapper{
     }
 
     /*
-
+    returns mutual friends of logged in user and user with id
+	may return null if failed
     */
     public static ArrayList<User> getMutualFriends(int id) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
@@ -339,7 +333,7 @@ public class DatabaseWrapper{
 
     /*
     Give a user id (or name, not preferable)
-    returns connents of knapsack
+    returns contents of knapsack
     */
     public static ArrayList<Item> getKnapsack(int id) throws TimeoutException {
         getKnapsackTask k = new getKnapsackTask(id);
@@ -532,6 +526,9 @@ public class DatabaseWrapper{
         }
     }
 
+    /*
+    gets a request from current iteration of a result set
+    */
     private static Request getRequest (ResultSet rs) throws SQLException {
         int type = rs.getInt("type");
         int id = rs.getInt("id");
@@ -784,10 +781,10 @@ public class DatabaseWrapper{
     private static String ArrL2String(ArrayList<Item> list){
         if (list == null || list.size() == 0) return "'{}'";
 
-        StringBuilder builder = new StringBuilder("'{"+list.get(0).id());
+        StringBuilder builder = new StringBuilder("'{"+list.get(0).getID());
 
         for (int i = 1; i < list.size(); i++) {
-            builder.append(", " + list.get(i).id());
+            builder.append(", " + list.get(i).getID());
         }
 
         builder.append("}'");
@@ -796,7 +793,7 @@ public class DatabaseWrapper{
     }
 
     /*
-    Decline the trade defined b requestID
+    Decline the trade defined by requestID
     returns true if successful
      */
     public static boolean declineTrade(int requestID) throws TimeoutException, NotLoggedInException {

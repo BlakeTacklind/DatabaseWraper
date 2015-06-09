@@ -1,7 +1,7 @@
 package com.dank.exchange.backend;
 
 public class NotLoggedInException extends Exception{
-    public NotLoggedInException(){
+    NotLoggedInException(){
         super("User isn't logged in");
     }
 }

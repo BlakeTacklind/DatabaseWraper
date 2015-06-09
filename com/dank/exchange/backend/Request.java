@@ -21,14 +21,14 @@ Middle Man Rejected = 22
 Middle Man Notification = 25
 */
 public class Request{
-    private int requestID, type, fromID, toID, mmID;
+    private int requestID, type;
     private ArrayList<Item> toItems, fromItems;
     private String extraString;
     private User from;
     private User to;
     private User Middleman;
 
-    public Request(int id, int ty, User frm, User t, User ei, ArrayList<Item> e1, ArrayList<Item> e2, String es){
+    Request(int id, int ty, User frm, User t, User ei, ArrayList<Item> e1, ArrayList<Item> e2, String es){
         requestID = id;
         type = ty;
         from = frm;
@@ -39,10 +39,19 @@ public class Request{
         extraString = es;
     }
 
+    public int getID(){return requestID;}
+    public int getType(){return type;}
+    public User getToUser(){return to;}
+    public User getFromUser(){return from;}
+    public User getMiddlemanUser(){return Middleman;}
+    public String getLocation(){return extraString;}
+    public ArrayList<Item> getToItems(){return toItems;}
+    public ArrayList<Item> getFromItems(){return fromItems;}
+
     public String toString(){
         String s = "requestID: " + requestID + ", type: " + type + ", from: " + from +
                 ", to: " + to + " , middle man: " + Middleman + ", toItems: " + toItems + ", " +
-                "fromItems: " + fromItems + ", extrastring: \"" + extraString + "\" itemsTo: ";
+                "fromItems: " + fromItems + ", location: \"" + extraString + "\" itemsTo: ";
 
         if(toItems != null)
             for (Item i: toItems)
