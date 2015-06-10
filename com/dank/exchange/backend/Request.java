@@ -39,7 +39,7 @@ public class Request implements Serializable {
         toItems = null;
         fromItems = null;
         extraString = null;
-        extraString = null;
+        extraString2 = null;
     }
 
     Request(int id, int ty, User frm, User t, User ei, ArrayList<Item> e1, ArrayList<Item> e2, String s1, String s2){
@@ -51,7 +51,7 @@ public class Request implements Serializable {
         toItems = e1;
         fromItems = e2;
         extraString = s1;
-        extraString = s2;
+        extraString2 = s2;
     }
 
     Request(int id, int ty, User frm, User t, User ei, ArrayList<Item> e1, ArrayList<Item> e2, String s1){
@@ -63,7 +63,7 @@ public class Request implements Serializable {
         toItems = e1;
         fromItems = e2;
         extraString = s1;
-        extraString = null;
+        extraString2 = null;
     }
 
     Request(int id, int ty, User frm, User t, ArrayList<Item> e1, ArrayList<Item> e2, String s1){

@@ -26,6 +26,7 @@ public class DatabaseWrapper{
             "&ssl=true";
     final private static String username = "parcelexchange";
     final private static String password = "Mabc0NDkYRf1yVyIfhRd";
+    final private static int MAXSTRING = 40;
 
     private static String myUserName;
     private static void start() throws SQLException {
@@ -135,6 +136,7 @@ public class DatabaseWrapper{
     prints error if failed
     */
     public static boolean logIn(String name) throws TimeoutException {
+        if (!safeString(name)) return false;
 
         logInTask l = new logInTask(name);
 
@@ -147,7 +149,6 @@ public class DatabaseWrapper{
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-
 
         if (userID == 0)
             return false;
@@ -176,11 +177,20 @@ public class DatabaseWrapper{
         return new User(userID, myUserName);
     }
 
+    private static boolean safeString(String str){
+        if(str == null) return false;
+        if (str.length() == 0) return false;
+        if(str.length() > MAXSTRING) return false;
+        if(str.contains("'")) return false;
+        if(str == null) return false;
+        return true;
+    }
     /*
     Add the new user by String
     return true if success
     */
     public static boolean addUser(String name) throws TimeoutException {
+        if (!safeString(name)) return false;
 
         addUserTask s = new addUserTask(name);
         try {
@@ -413,6 +423,7 @@ public class DatabaseWrapper{
                     "userid = ANY(SELECT user1 FROM friendship WHERE user2 = 20) OR " +
                     "userid = ANY(SELECT user2 FROM friendship WHERE user1 = 20) " +
                     "ORDER BY username;");
+            output = new ArrayList<User>();
         }
 
         @Override
@@ -471,6 +482,7 @@ public class DatabaseWrapper{
     */
     public static boolean addToKnapsack(String itemName) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
+        if (!safeString(itemName)) return false;
 
         try {
             if (new addToKnapsackTack(itemName).execute().get(timeOutLong,TimeUnit.MILLISECONDS) > 0)
@@ -672,12 +684,17 @@ public class DatabaseWrapper{
         }
     }
     private static ArrayList<Item> ArraysToItems (Array ia, Array sa) throws SQLException {
+        if (ia == null) return new ArrayList<Item>();
+
         Integer[] intArr = (Integer[]) ia.getArray();
         String[] strArr = (String[]) sa.getArray();
 
+        ia.free();
+        sa.free();
+
         if (intArr.length != strArr.length){
             Log.e("ArraysToItems", "Not matching number of id to name for items!");
-            return null;
+            return new ArrayList<Item>();
         }
 
         ArrayList<Item> arr = new ArrayList<Item>(intArr.length);
@@ -695,6 +712,7 @@ public class DatabaseWrapper{
     */
     public static boolean requestFriendship(String name) throws TimeoutException, NotLoggedInException {
         if (userID == 0)throw new NotLoggedInException();
+        if (!safeString(name)) return false;
 
         addFriendTask af = new addFriendTask(name);
 
@@ -947,6 +965,7 @@ public class DatabaseWrapper{
     */
     public static boolean respondLocation(Request request, String location) throws TimeoutException, NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
+        if (!safeString(location)) return false;
 
         respondLocationTask rl = new respondLocationTask(request.getID(), location);
 
@@ -982,6 +1001,7 @@ public class DatabaseWrapper{
 
     public static boolean declineLocation(Request request, String location) throws NotLoggedInException {
         if (userID == 0) throw new NotLoggedInException();
+        if (!safeString(location)) return false;
 
         declineLocationTask dl = new declineLocationTask(request.getID(), location);
 
@@ -1140,6 +1160,7 @@ public class DatabaseWrapper{
     */
     public static boolean middleManTrade(User them, User middleMan, ArrayList<Item> items, boolean toThem, String location) throws TimeoutException, NotLoggedInException{
         if (userID == 0) throw new NotLoggedInException();
+        if (!safeString(location)) return false;
 
         String s;
         if(toThem) s="TRUE";
@@ -1181,6 +1202,7 @@ public class DatabaseWrapper{
 
     public static  boolean middleManAccept(Request request, String location) throws TimeoutException, NotLoggedInException{
         if (userID == 0) throw new NotLoggedInException();
+        if (!safeString(location)) return false;
 
         middleManAcceptTask mmat = new middleManAcceptTask(request.getID(), location);
 
@@ -1274,6 +1296,47 @@ public class DatabaseWrapper{
         @Override
         protected void middle(ResultSet rs) throws SQLException {
             output = rs.getInt("completePhase2");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
+    }
+
+    public static boolean cancelMiddleMan(Request request){
+        return false;
+    }
+
+    public static int getMiddleMan() throws TimeoutException, NotLoggedInException{
+        if (userID == 0) throw new NotLoggedInException();
+
+        getMMTask mmt = new getMMTask();
+
+        try {
+            return mmt.execute().get(timeOut, TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        return -1;
+    }
+    private static class getMMTask extends SELECT<Integer>{
+        private int output;
+
+        public getMMTask() {
+            super("SELECT middleman FROM users WHERE userid = "+userID+";");
+            output = -1;
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            if (rs.getBoolean(1))
+                output = 1;
+            else
+                output = 0;
         }
 
         @Override
