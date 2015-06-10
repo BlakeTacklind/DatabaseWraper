@@ -27,6 +27,7 @@ public class DatabaseWrapper{
     final private static String username = "parcelexchange";
     final private static String password = "Mabc0NDkYRf1yVyIfhRd";
 
+    private static String myUserName;
     private static void start() throws SQLException {
         try {
             Class.forName("org.postgresql.Driver");
@@ -138,7 +139,7 @@ public class DatabaseWrapper{
         logInTask l = new logInTask(name);
 
         userID = 0;
-        
+
         try {
             l.execute().get(timeOut, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -147,9 +148,11 @@ public class DatabaseWrapper{
             e.printStackTrace();
         }
 
+
         if (userID == 0)
             return false;
 
+        myUserName = name;
         return true;
     }
     private static class logInTask extends SELECT<Integer>{
@@ -169,6 +172,10 @@ public class DatabaseWrapper{
         }
     }
 
+    public static User returnMe() throws NotLoggedInException{
+        return new User(userID, myUserName);
+    }
+
     /*
     Add the new user by String
     return true if success
@@ -184,10 +191,10 @@ public class DatabaseWrapper{
             e.printStackTrace();
         }
 
-        while(userID == 0);
-
         if (userID == -1)
             return false;
+
+        myUserName = name;
 
         return true;
     }
@@ -455,6 +462,9 @@ public class DatabaseWrapper{
         }
     }
 
+    public static ArrayList<Item> getKanpsak() throws TimeoutException, NotLoggedInException {
+        return getKnapsack(returnMe());
+    }
     /*
     add item named string to knapsack
     returns true if posted
