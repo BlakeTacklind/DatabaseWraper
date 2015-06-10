@@ -248,6 +248,48 @@ public class DatabaseWrapper{
         }
     }
 
+    /*
+    set middle man status of logged in user
+    returns true if successful
+    */
+    public static boolean setMiddleMan(boolean can) throws TimeoutException, NotLoggedInException {
+        if (userID == 0) throw new NotLoggedInException();
+
+        String s;
+        if (can) s = "TRUE";
+        else s = "FALSE";
+
+        setMiddleManTask mt = new setMiddleManTask(s);
+
+        try {
+            return mt.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+    private static class setMiddleManTask extends SELECT<Integer>{
+        private int output;
+
+        public setMiddleManTask(String can) {
+            super("SELECT \"middleManUpdate\" ("+userID+", "+can+");");
+            output = 0;
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("middleManUpdate");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
+    }
+
 	/*
 	return your list of friends
 	may return null if failed
@@ -328,6 +370,50 @@ public class DatabaseWrapper{
         @Override
         protected ArrayList<User> endBackground() {
             return out;
+        }
+    }
+
+    /*
+    Get List of middle men mutual to logged in user and friend
+    returns list of mutual middle men
+    */
+    public static ArrayList<User> getMutualMiddleMen(User friend) throws TimeoutException, NotLoggedInException{
+        if (userID == 0) throw new NotLoggedInException();
+
+        getMutualMiddleMenTask mm = new getMutualMiddleMenTask(friend.getID());
+
+        try {
+            return mm.execute().get(timeOut,TimeUnit.MILLISECONDS);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+    private static class getMutualMiddleMenTask extends SELECT<ArrayList<User>>{
+        private ArrayList<User> output;
+
+        public getMutualMiddleMenTask(int id) {
+            super("SELECT * FROM users WHERE " +
+                    "middleman = TRUE AND " +
+                    "(userid = ANY(SELECT user1 FROM friendship WHERE user2 = 17) OR " +
+                    "userid = ANY(SELECT user2 FROM friendship WHERE user1 = 17)) INTERSECT " +
+                    "SELECT * FROM users WHERE " +
+                    "userid = ANY(SELECT user1 FROM friendship WHERE user2 = 20) OR " +
+                    "userid = ANY(SELECT user2 FROM friendship WHERE user1 = 20) " +
+                    "ORDER BY username;");
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output.add(new User(rs.getInt("userid"), rs.getString("username")));
+        }
+
+        @Override
+        protected ArrayList<User> endBackground() {
+            return output;
         }
     }
 
@@ -981,22 +1067,6 @@ public class DatabaseWrapper{
         protected Integer endBackground() {
             return output;
         }
-    }
-
-    /*
-    set middle man status of logged in user
-    returns true if successful
-    */
-    public static boolean setMiddleMan(boolean can) throws TimeoutException, NotLoggedInException {
-        return false;
-    }
-
-    /*
-    Get List of middle men mutual to logged in user and friend
-    returns list of mutual middle men
-    */
-    public static ArrayList<User> getMutualMiddleMen(User friend) throws TimeoutException, NotLoggedInException{
-        return null;
     }
 
     /*

@@ -40,6 +40,12 @@ returns true if successful
 boolean deleteSelf() throws TimeoutException, NotLoggedInException 
 ```
 
+set middle man status of logged in user<br>
+returns true if successful
+```Java
+boolean setMiddleMan(boolean canMiddleMan) throws TimeoutException, NotLoggedInException 
+```
+
 return your list of friends<br>
 may return null if failed
 ```Java
@@ -50,6 +56,12 @@ returns mutual friends of logged in user and user given<br>
 may return null if failed
 ```Java
 ArrayList<User> getMutualFriends(User friend) throws TimeoutException, NotLoggedInException 
+```
+
+Get List of middle men mutual to logged in user and friend<br>
+returns list of mutual middle men
+```Java
+ArrayList<User> getMutualMiddleMen(User friend) throws TimeoutException, NotLoggedInException
 ```
 
 Give a user<br>
@@ -146,19 +158,7 @@ boolean cancelTrade(Request request) throws TimeoutException, NotLoggedInExcepti
 ```
 
 ---
-#### Not implemented - yet
-
-set middle man status of logged in user<br>
-returns true if successful
-```Java
-boolean setMiddleMan(boolean canMiddleMan) throws TimeoutException, NotLoggedInException 
-```
-
-Get List of middle men mutual to logged in user and friend<br>
-returns list of mutual middle men
-```Java
-ArrayList<User> getMutualMiddleMen(User friend) throws TimeoutException, NotLoggedInException
-```
+#### Empty Bodies
 
 Start a trade with a middleman<br>
 returns true if successful
