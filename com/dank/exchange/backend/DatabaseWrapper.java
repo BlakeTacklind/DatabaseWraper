@@ -658,9 +658,11 @@ public class DatabaseWrapper{
                         rs.getString("extrastring"));
             case 22:
                 return new Request(rs.getInt("id"), type, u1, u2, new User(rs.getInt("extraInt"),
-                        rs.getString("mmName")), ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
-                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")),
-                        rs.getString("extrastring"), rs.getString("extrastring2"));
+                        rs.getString("mmName")), ArraysToItems(rs.getArray("extra1"),
+                        rs.getArray("items1")), null, rs.getString("extrastring"), rs.getString("extrastring2"));
+            case 23:
+                return new Request(rs.getInt("id"), type, u1, u2, ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
+                        null, rs.getString("extrastring"));
             default:
                 Log.e("getRequest", "Yell at Blake: Request Type not implemented! - Still works so not so loudly");
                 return new Request(rs.getInt("id"), type, u1, u2, new User(rs.getInt("extraInt"),
@@ -925,6 +927,7 @@ public class DatabaseWrapper{
 
         public declineTradeTask(int id) {
             super("SELECT \"declineTrade\" ("+userID+", "+id+");");
+            output = 0;
         }
 
         @Override
@@ -999,6 +1002,7 @@ public class DatabaseWrapper{
 
         public declineLocationTask(int reqID, String loc) {
             super("SELECT \"newLocation\" ("+userID+", "+reqID+", '"+loc+"');");
+            output = 0;
         }
 
         @Override
@@ -1075,6 +1079,7 @@ public class DatabaseWrapper{
 
         public completeTradeTask(int reqID) {
             super("SELECT \"completeTrade\" ("+userID+", "+reqID+");");
+            output = 0;
         }
 
         @Override
@@ -1115,6 +1120,7 @@ public class DatabaseWrapper{
 
         public cancelTradeTask(int reqID) {
             super("SELECT \"cancelTrade\" ("+userID+", "+reqID+");");
+            output = 0;
         }
 
         @Override
@@ -1155,6 +1161,7 @@ public class DatabaseWrapper{
 
         public middleManTradeTask(int tID, int mmID, ArrayList<Item> it, String bool, String loc) {
             super("SELECT \"newMiddleManTrade\" ("+userID+", "+tID+", "+mmID+", "+ArrL2String(it)+", "+bool+", '"+loc+"');");
+            output = 0;
         }
 
         @Override
@@ -1192,6 +1199,7 @@ public class DatabaseWrapper{
 
         public middleManAcceptTask(int reqID, String loc) {
             super("SELECT \"acceptMiddleMan\" ("+userID+", "+reqID+", '"+loc+"');");
+            output = 0;
         }
 
         @Override
@@ -1205,7 +1213,72 @@ public class DatabaseWrapper{
         }
     }
 
-    public static boolean middleManChangeHands(Request request) throws TimeoutException, NotLoggedInException{
+    public static boolean middleManPhase1(Request request) throws TimeoutException, NotLoggedInException{
+        if (userID == 0) throw new NotLoggedInException();
+
+        phase1Task p1 = new phase1Task(request.getID());
+
+        try {
+            return p1.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
         return false;
+    }
+    private static class phase1Task extends SELECT<Integer>{
+        private int output;
+
+        public phase1Task(int reqID) {
+            super("SELECT \"completePhase1\" ("+userID+", "+reqID+");");
+            output = 0;
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("completePhase1");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
+    }
+
+
+    public static boolean middleManPhase2(Request request) throws TimeoutException, NotLoggedInException{
+        if (userID == 0) throw new NotLoggedInException();
+
+        phase2Task p2 = new phase2Task(request.getID());
+
+        try {
+            return p2.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+    private static class phase2Task extends SELECT<Integer>{
+        private int output;
+
+        public phase2Task(int reqID) {
+            super("SELECT \"completePhase2\" ("+userID+", "+reqID+");");
+            output = 0;
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("completePhase2");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
     }
 }
