@@ -54,6 +54,18 @@ public class Request implements Serializable {
         extraString = s2;
     }
 
+    Request(int id, int ty, User frm, User t, User ei, ArrayList<Item> e1, ArrayList<Item> e2, String s1){
+        requestID = id;
+        type = ty;
+        from = frm;
+        to = t;
+        Middleman = ei;
+        toItems = e1;
+        fromItems = e2;
+        extraString = s1;
+        extraString = null;
+    }
+
     Request(int id, int ty, User frm, User t, ArrayList<Item> e1, ArrayList<Item> e2, String s1){
         requestID = id;
         type = ty;

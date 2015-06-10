@@ -191,7 +191,7 @@ public class DatabaseWrapper{
             e.printStackTrace();
         }
 
-        if (userID == -1)
+        if (userID == 0)
             return false;
 
         myUserName = name;
@@ -651,7 +651,16 @@ public class DatabaseWrapper{
                         ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
                         ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")),
                         rs.getString("extrastring"));
-            case 25:
+            case 20:
+                return new Request(rs.getInt("id"), type, u1, u2, new User(rs.getInt("extraInt"),
+                        rs.getString("mmName")), ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
+                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")),
+                        rs.getString("extrastring"));
+            case 22:
+                return new Request(rs.getInt("id"), type, u1, u2, new User(rs.getInt("extraInt"),
+                        rs.getString("mmName")), ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
+                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")),
+                        rs.getString("extrastring"), rs.getString("extrastring2"));
             default:
                 Log.e("getRequest", "Yell at Blake: Request Type not implemented! - Still works so not so loudly");
                 return new Request(rs.getInt("id"), type, u1, u2, new User(rs.getInt("extraInt"),
