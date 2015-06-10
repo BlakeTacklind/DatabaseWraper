@@ -1,6 +1,8 @@
 package com.dank.exchange.backend;
 
-public class Item{
+import java.io.Serializable;
+
+public class Item implements Serializable{
     Item(int i, String n){
         id = i;
         name = n;

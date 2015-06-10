@@ -137,6 +137,8 @@ public class DatabaseWrapper{
 
         logInTask l = new logInTask(name);
 
+        userID = 0;
+        
         try {
             l.execute().get(timeOut, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
@@ -495,7 +497,7 @@ public class DatabaseWrapper{
             "ON items.id = ANY(r1.extra1) WHERE r1.id = requests.id) AS items1, " +
             "extra2, ARRAY(SELECT items.name FROM items JOIN requests AS r1 " +
             "ON items.id = ANY(r1.extra2) WHERE r1.id = requests.id) AS items2, " +
-            "\"extraInt\", u3.username AS \"mmName\", extrastring " +
+            "\"extraInt\", u3.username AS \"mmName\", extrastring, extrastring2 " +
             "FROM requests " +
             "JOIN users AS u1 ON requests.from = u1.userid " +
             "JOIN users AS u2 ON requests.to = u2.userid " +
@@ -627,22 +629,25 @@ public class DatabaseWrapper{
             case 3:
             case 11:
             case 14:
-                return new Request(id, type, u1, u2, null, null, null, null);
+                return new Request(id, type, u1, u2);
             case 10:
-                return new Request(id, type, u1, u2, null,
+                return new Request(id, type, u1, u2,
                         ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
-                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")), null);
+                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")));
             case 12:
             case 13:
             case 15:
-                return new Request(id, type, u1, u2, null,
+                return new Request(id, type, u1, u2,
                         ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
                         ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")),
                         rs.getString("extrastring"));
             case 25:
             default:
-                Log.e("getRequest", "Yell at Blake: Request Type not implemented!");
-                return new Request(rs.getInt("id"), type, u1, u2, new User(rs.getInt("extraInt"), rs.getString("mmName")), null, null, null);
+                Log.e("getRequest", "Yell at Blake: Request Type not implemented! - Still works so not so loudly");
+                return new Request(rs.getInt("id"), type, u1, u2, new User(rs.getInt("extraInt"),
+                        rs.getString("mmName")), ArraysToItems(rs.getArray("extra1"), rs.getArray("items1")),
+                        ArraysToItems(rs.getArray("extra2"), rs.getArray("items2")),
+                        rs.getString("extrastring"), rs.getString("extrastring2"));
         }
     }
     private static ArrayList<Item> ArraysToItems (Array ia, Array sa) throws SQLException {
@@ -1076,4 +1081,14 @@ public class DatabaseWrapper{
     public static boolean middleManTrade(User them, User middleMan, ArrayList<Item> items, boolean toThem) throws TimeoutException, NotLoggedInException{
         return false;
     }
+
+    public static boolean middleManTradeDecline(Request request) throws TimeoutException, NotLoggedInException{
+        return false;
+    }
+
+    public static  boolean middleManAccept(Request request, String location) throws TimeoutException, NotLoggedInException{
+        return false;
+    }
+
+
 }

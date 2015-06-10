@@ -1,6 +1,8 @@
 package com.dank.exchange.backend;
 
-public class User{
+import java.io.Serializable;
+
+public class User implements Serializable {
     User(int i, String n){
         id = i;
         name = n;
