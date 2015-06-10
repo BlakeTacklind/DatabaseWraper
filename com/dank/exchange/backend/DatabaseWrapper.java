@@ -462,7 +462,7 @@ public class DatabaseWrapper{
         }
     }
 
-    public static ArrayList<Item> getKanpsak() throws TimeoutException, NotLoggedInException {
+    public static ArrayList<Item> getKnapsack() throws TimeoutException, NotLoggedInException {
         return getKnapsack(returnMe());
     }
     /*
@@ -968,6 +968,41 @@ public class DatabaseWrapper{
         }
     }
 
+    public static boolean declineLocation(Request request, String location) throws NotLoggedInException {
+        if (userID == 0) throw new NotLoggedInException();
+
+        declineLocationTask dl = new declineLocationTask(request.getID(), location);
+
+        try {
+            return dl.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        } catch (TimeoutException e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+    private static class declineLocationTask extends SELECT<Integer>{
+        private int output;
+
+        public declineLocationTask(int reqID, String loc) {
+            super("SELECT \"newLocation\" ("+userID+", "+reqID+", '"+loc+"');");
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("newLocation");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
+    }
+
     /*
     Accept the location of trade request
     returns true if successful
@@ -1088,17 +1123,80 @@ public class DatabaseWrapper{
     Start a trade with a middleman
     returns true if successful
     */
-    public static boolean middleManTrade(User them, User middleMan, ArrayList<Item> items, boolean toThem) throws TimeoutException, NotLoggedInException{
+    public static boolean middleManTrade(User them, User middleMan, ArrayList<Item> items, boolean toThem, String location) throws TimeoutException, NotLoggedInException{
+        if (userID == 0) throw new NotLoggedInException();
+
+        String s;
+        if(toThem) s="TRUE";
+        else s="FALSE";
+
+        middleManTradeTask mmtt = new middleManTradeTask(them.getID(), middleMan.getID(), items, s, location);
+
+        try {
+            return mmtt.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
         return false;
+    }
+    private static class middleManTradeTask extends SELECT<Integer>{
+        private int output;
+
+        public middleManTradeTask(int tID, int mmID, ArrayList<Item> it, String bool, String loc) {
+            super("SELECT \"newMiddleManTrade\" ("+userID+", "+tID+", "+mmID+", "+ArrL2String(it)+", "+bool+", '"+loc+"');");
+        }
+
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("newMiddleManTrade");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
     }
 
     public static boolean middleManTradeDecline(Request request) throws TimeoutException, NotLoggedInException{
-        return false;
+        return cancelTrade(request);
     }
 
     public static  boolean middleManAccept(Request request, String location) throws TimeoutException, NotLoggedInException{
+        if (userID == 0) throw new NotLoggedInException();
+
+        middleManAcceptTask mmat = new middleManAcceptTask(request.getID(), location);
+
+        try {
+            return mmat.execute().get(timeOut, TimeUnit.MILLISECONDS) > 0;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+
         return false;
     }
+    public static class middleManAcceptTask extends SELECT<Integer>{
+        private int output;
 
+        public middleManAcceptTask(int reqID, String loc) {
+            super("SELECT \"acceptMiddleMan\" ("+userID+", "+reqID+", '"+loc+"');");
+        }
 
+        @Override
+        protected void middle(ResultSet rs) throws SQLException {
+            output = rs.getInt("acceptMiddleMan");
+        }
+
+        @Override
+        protected Integer endBackground() {
+            return output;
+        }
+    }
+
+    public static boolean middleManChangeHands(Request request) throws TimeoutException, NotLoggedInException{
+        return false;
+    }
 }
