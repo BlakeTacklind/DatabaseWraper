@@ -29,6 +29,10 @@ public class DatabaseWrapper{
     final private static int MAXSTRING = 40;
 
     private static String myUserName;
+
+    /*
+    Connect to server
+    */
     private static void start() throws SQLException {
         try {
             Class.forName("org.postgresql.Driver");
@@ -43,6 +47,10 @@ public class DatabaseWrapper{
         }
 
     }
+
+    /*
+    Disconnect from server
+    */
     private static void stop(){
         if (conn != null)
             try {
@@ -51,6 +59,10 @@ public class DatabaseWrapper{
                 e.printStackTrace();
             }
     }
+
+    /*
+    Abstract AsyncTask wraper for SELECT statements
+    */
     private static abstract class SELECT<OutputType> extends AsyncTask<Integer, Integer, OutputType> {
         private String sql;
 
@@ -96,6 +108,9 @@ public class DatabaseWrapper{
             return endBackground();
         }
     }
+    /*
+    abstract INSERT and DELETE wrapper
+    */
     private static abstract class ALTER<ReturnType> extends AsyncTask<Integer, Integer, ReturnType>{
         private String sql;
 
@@ -173,6 +188,9 @@ public class DatabaseWrapper{
         }
     }
 
+    /*
+    Get youself 
+    */
     public static User returnMe() throws NotLoggedInException{
         return new User(userID, myUserName);
     }
@@ -185,6 +203,7 @@ public class DatabaseWrapper{
         if(str == null) return false;
         return true;
     }
+
     /*
     Add the new user by String
     return true if success
@@ -1196,10 +1215,19 @@ public class DatabaseWrapper{
         }
     }
 
+    /*Start of the 11th hour*/
+
+    /*
+    Decline a middle man trade
+    return a request
+    */
     public static boolean middleManTradeDecline(Request request) throws TimeoutException, NotLoggedInException{
         return cancelTrade(request);
     }
 
+    /*
+    Accept a trade involving a middle man
+    */
     public static  boolean middleManAccept(Request request, String location) throws TimeoutException, NotLoggedInException{
         if (userID == 0) throw new NotLoggedInException();
         if (!safeString(location)) return false;
@@ -1235,6 +1263,9 @@ public class DatabaseWrapper{
         }
     }
 
+    /*
+    Middle man recieved packages
+    */
     public static boolean middleManPhase1(Request request) throws TimeoutException, NotLoggedInException{
         if (userID == 0) throw new NotLoggedInException();
 
@@ -1269,7 +1300,9 @@ public class DatabaseWrapper{
         }
     }
 
-
+    /*
+    Reciever has recieved packages
+    */
     public static boolean middleManPhase2(Request request) throws TimeoutException, NotLoggedInException{
         if (userID == 0) throw new NotLoggedInException();
 
@@ -1304,6 +1337,9 @@ public class DatabaseWrapper{
         }
     }
 
+    /*
+    cancels a middle man request
+    */
     public static boolean cancelMiddleMan(Request request){
         return false;
     }
